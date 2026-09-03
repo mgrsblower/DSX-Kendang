@@ -1,0 +1,51 @@
+workflows:
+  android-debug:
+    name: Android debug APK
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+    scripts:
+      - name: Set Android SDK location
+        script: |
+          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
+      - name: Get Flutter packages
+        script: |
+          flutter pub get
+      - name: Analyze project
+        script: |
+          flutter analyze --no-pub
+      - name: Run tests
+        script: |
+          flutter test --no-pub
+      - name: Build debug APK
+        script: |
+          flutter build apk --debug --no-pub
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+
+  flutter-ios-unsigned-ipa:
+    name: DSX Kendang iOS unsigned IPA
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      xcode: latest
+    scripts:
+      - name: Install Flutter dependencies
+        script: |
+          flutter pub get
+      - name: Build iOS device app
+        script: |
+          flutter build ios --release --no-codesign --no-pub
+      - name: Create unsigned IPA
+        script: |
+          set -e
+          rm -rf build/ios/ipa
+          mkdir -p build/ios/ipa/Payload
+          test -d build/ios/iphoneos/Runner.app
+          cp -R build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
+          cd build/ios/ipa
+          zip -qry DSX-Kendang.ipa Payload
+    artifacts:
+      - build/ios/ipa/DSX-Kendang.ipa
