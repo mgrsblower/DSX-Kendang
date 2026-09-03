@@ -1,29 +1,4 @@
 workflows:
-  android-debug:
-    name: Android debug APK
-    max_build_duration: 60
-    instance_type: mac_mini_m2
-    environment:
-      flutter: stable
-    scripts:
-      - name: Set Android SDK location
-        script: |
-          echo "flutter.sdk=$HOME/programs/flutter" > "$CM_BUILD_DIR/android/local.properties"
-      - name: Get Flutter packages
-        script: |
-          flutter pub get
-      - name: Analyze project
-        script: |
-          flutter analyze --no-pub
-      - name: Run tests
-        script: |
-          flutter test --no-pub
-      - name: Build debug APK
-        script: |
-          flutter build apk --debug --no-pub
-    artifacts:
-      - build/app/outputs/flutter-apk/*.apk
-
   flutter-ios-unsigned-ipa:
     name: DSX Kendang iOS unsigned IPA
     max_build_duration: 60
