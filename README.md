@@ -1,4 +1,4 @@
-# dsx_drum_kendang
+# MGR Drum Kendang
 
 A new Flutter project.
 

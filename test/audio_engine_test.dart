@@ -8,10 +8,7 @@ void main() {
     final sample = SampleCatalog.presets.first.samples.first;
 
     await engine.preload(SampleCatalog.presets.first);
-    await Future.wait([
-      engine.play(sample, 0.25),
-      engine.play(sample, 0.75),
-    ]);
+    await Future.wait([engine.play(sample, 0.25), engine.play(sample, 0.75)]);
 
     expect(engine.preloadedPreset, SampleCatalog.presets.first);
     expect(engine.playedVolumes, [0.25, 0.75]);
@@ -21,7 +18,9 @@ void main() {
     final engine = RecordingAudioEngine();
     await engine.dispose();
 
-    expect(() => engine.play(SampleCatalog.presets.first.samples.first, 1),
-        throwsStateError);
+    expect(
+      () => engine.play(SampleCatalog.presets.first.samples.first, 1),
+      throwsStateError,
+    );
   });
 }

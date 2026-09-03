@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'audio/flutter_audio_engine.dart';
@@ -7,6 +8,11 @@ import 'features/drum_pad/drum_pad_state.dart';
 import 'storage/settings_store.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations(const [
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
   runApp(const DsxDrumKendangApp());
 }
 
@@ -58,9 +64,13 @@ class _DsxDrumKendangAppState extends State<DsxDrumKendangApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'DSX Drum Kendang',
+      title: 'MGR Drum Kendang',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.dark,
+        ),
+        brightness: Brightness.dark,
       ),
       home: DrumPadPage(
         state: _state,

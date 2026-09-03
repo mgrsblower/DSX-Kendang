@@ -22,7 +22,10 @@ class FlutterAudioEngine implements AudioEngine {
       await player.dispose();
     });
     await player.setVolume(volume.clamp(0, 1).toDouble());
-    await player.play(AssetSource(sample.assetPath.replaceFirst('assets/', '')));
+    final source = sample.assetPath.startsWith('assets/')
+        ? AssetSource(sample.assetPath.replaceFirst('assets/', ''))
+        : DeviceFileSource(sample.assetPath);
+    await player.play(source);
   }
 
   @override

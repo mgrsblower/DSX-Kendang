@@ -13,11 +13,13 @@ class SettingsStore {
     final rawVolumes = _readStringList('pad_volumes');
     final volumes = rawVolumes?.map(double.tryParse).toList();
     final candidate = volumes;
-    final hasValidVolumes = candidate != null &&
+    final hasValidVolumes =
+        candidate != null &&
         candidate.length == DrumPadState.padCount &&
         candidate.every((value) => value?.isFinite == true);
     final state = DrumPadState(
-      activePresetIndex: preset != null && preset >= 0 && preset < DrumPadState.presetCount
+      activePresetIndex:
+          preset != null && preset >= 0 && preset < DrumPadState.presetCount
           ? preset
           : 0,
       masterVolume: master != null && master.isFinite ? master : 0.5,

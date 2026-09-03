@@ -4,12 +4,12 @@ class DrumPadState {
     double masterVolume = 0.5,
     List<double>? padVolumes,
     this.leftHanded = false,
-  })  : _activePresetIndex = _validatePreset(activePresetIndex),
-        _masterVolume = _clamp(masterVolume),
-        _padVolumes = List<double>.generate(
-          12,
-          (index) => _clamp(padVolumes?[index] ?? 1),
-        );
+  }) : _activePresetIndex = _validatePreset(activePresetIndex),
+       _masterVolume = _clamp(masterVolume),
+       _padVolumes = List<double>.generate(
+         12,
+         (index) => _clamp(padVolumes?[index] ?? 1),
+       );
 
   static const padCount = 12;
   static const presetCount = 6;
