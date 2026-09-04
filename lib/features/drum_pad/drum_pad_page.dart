@@ -96,6 +96,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
         });
       }
     });
+    widget.engine.preload(_preset);
   }
 
   Preset get _preset => SampleCatalog.presets[widget.state.activePresetIndex];
@@ -145,6 +146,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
   void _selectPreset(int index) {
     setState(() => widget.state.selectPreset(index));
     widget.onStateChanged?.call();
+    widget.engine.preload(_preset);
   }
 
   void _showError(String message) {
@@ -1655,15 +1657,19 @@ class _DrumPadButtonState extends State<DrumPadButton> {
     button: true,
     label: 'Pad ${widget.padNumber ?? ''} ${widget.label}',
     child: Listener(
-      onPointerDown: (_) => setState(() => _pressed = true),
+      behavior: HitTestBehavior.opaque,
+      onPointerDown: (_) {
+        setState(() => _pressed = true);
+        widget.onPressed();
+      },
       onPointerUp: (_) => setState(() => _pressed = false),
       onPointerCancel: (_) => setState(() => _pressed = false),
       child: AnimatedScale(
         scale: _pressed ? .94 : 1,
-        duration: const Duration(milliseconds: 75),
+        duration: const Duration(milliseconds: 40),
         curve: Curves.easeOut,
         child: ElevatedButton(
-          onPressed: widget.onPressed,
+          onPressed: () {},
           style: ElevatedButton.styleFrom(
             padding: EdgeInsets.zero,
             backgroundColor: _MGRColors.surface3,
