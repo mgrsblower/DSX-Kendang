@@ -254,6 +254,13 @@ class SkinCatalog {
       smallPadAsset: 'assets/ui/skins/pad_kecil_red.webp',
       panelAsset: 'assets/ui/skins/panel_red.webp',
     ),
+    SkinOption(
+      id: 'blue',
+      label: 'Blue',
+      padAsset: 'assets/ui/skins/pad_blue.webp',
+      smallPadAsset: 'assets/ui/skins/pad_kecil_blue.webp',
+      panelAsset: 'assets/ui/skins/panel_blue.webp',
+    ),
   ];
 
   static const List<MapEntry<String, String?>> panels = [
@@ -295,6 +302,7 @@ class SkinCatalog {
     MapEntry('Green', 'assets/ui/skins/panel_green.webp'),
     MapEntry('Orange', 'assets/ui/skins/panel_orange.webp'),
     MapEntry('Red', 'assets/ui/skins/panel_red.webp'),
+    MapEntry('Blue', 'assets/ui/skins/panel_blue.webp'),
   ];
 
   static const List<MapEntry<String, String>> padOptions = [
@@ -340,6 +348,8 @@ class SkinCatalog {
     MapEntry('Orange (Kecil)', 'assets/ui/skins/pad_kecil_orange.webp'),
     MapEntry('Red', 'assets/ui/skins/pad_red.webp'),
     MapEntry('Red (Kecil)', 'assets/ui/skins/pad_kecil_red.webp'),
+    MapEntry('Blue', 'assets/ui/skins/pad_blue.webp'),
+    MapEntry('Blue (Kecil)', 'assets/ui/skins/pad_kecil_blue.webp'),
   ];
 
   static bool isSmallPad(int index) =>

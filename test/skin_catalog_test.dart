@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('SkinCatalog exposes all panels and pad options', () {
-    expect(SkinCatalog.panels.length, greaterThanOrEqualTo(38));
-    expect(SkinCatalog.padOptions.length, greaterThanOrEqualTo(42));
-    expect(SkinCatalog.packs.length, greaterThanOrEqualTo(38));
+    expect(SkinCatalog.panels.length, greaterThanOrEqualTo(39));
+    expect(SkinCatalog.padOptions.length, greaterThanOrEqualTo(44));
+    expect(SkinCatalog.packs.length, greaterThanOrEqualTo(39));
   });
 
   test('SkinCatalog resolves dual-size pad skins correctly for small and large pads', () {
@@ -26,6 +26,12 @@ void main() {
     expect(SkinCatalog.resolvePad(9, {}, 'gold'), 'assets/ui/skins/pad_kecil_gold.webp');
     expect(SkinCatalog.resolvePad(11, {}, 'gold'), 'assets/ui/skins/pad_kecil_gold.webp');
     expect(SkinCatalog.resolvePanel(null, 'gold'), 'assets/ui/skins/panel_gold.webp');
+
+    // Blue theme resolution
+    expect(SkinCatalog.resolvePad(0, {}, 'blue'), 'assets/ui/skins/pad_kecil_blue.webp');
+    expect(SkinCatalog.resolvePad(5, {}, 'blue'), 'assets/ui/skins/pad_blue.webp');
+    expect(SkinCatalog.resolvePad(10, {}, 'blue'), 'assets/ui/skins/pad_kecil_blue.webp');
+    expect(SkinCatalog.resolvePanel(null, 'blue'), 'assets/ui/skins/panel_blue.webp');
   });
 
   test('SkinCatalog resolves new 14 themes correctly', () {
