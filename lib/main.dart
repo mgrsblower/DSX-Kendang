@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'audio/flutter_audio_engine.dart';
+import 'audio/native_audio_engine.dart';
 import 'features/drum_pad/drum_pad_page.dart';
 import 'features/drum_pad/drum_pad_state.dart';
 import 'storage/settings_store.dart';
@@ -25,7 +25,7 @@ class DsxDrumKendangApp extends StatefulWidget {
 
 class _DsxDrumKendangAppState extends State<DsxDrumKendangApp> {
   final _state = DrumPadState();
-  final _engine = FlutterAudioEngine();
+  final _engine = NativeAudioEngine();
   SettingsStore? _settingsStore;
   SavedSkinSettings? _skinSettings;
 

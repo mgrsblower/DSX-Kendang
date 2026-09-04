@@ -39,7 +39,6 @@ void main() {
       '12.wav',
       'set4_p2.m4a',
     ];
-    final archive = const PresetArchive();
     final parsedPads = <int>[];
     for (final name in filenames) {
       for (final regex in [
