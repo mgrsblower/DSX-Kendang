@@ -139,4 +139,12 @@ class SettingsStore {
       padOpacity: padOpacity,
     );
   }
+
+  double loadMusicVolume() {
+    return _readDouble('music_volume') ?? 0.5;
+  }
+
+  Future<void> saveMusicVolume(double volume) async {
+    await _preferences.setDouble('music_volume', volume);
+  }
 }

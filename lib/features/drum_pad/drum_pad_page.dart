@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -49,6 +50,18 @@ class _DrumPadPageState extends State<DrumPadPage> {
   final Map<int, SampleRef> _customSamples = {};
   final PresetArchive _presetArchive = const PresetArchive();
 
+  String? _currentMusicName;
+  bool _isMusicPlaying = false;
+  Duration _musicPosition = Duration.zero;
+  Duration _musicDuration = Duration.zero;
+  double _musicVolume = 0.5;
+  bool _isMusicMuted = false;
+  double _preMuteVolume = 0.5;
+
+  StreamSubscription<PlayerState>? _playerStateSubscription;
+  StreamSubscription<Duration>? _durationSubscription;
+  StreamSubscription<Duration>? _positionSubscription;
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +72,30 @@ class _DrumPadPageState extends State<DrumPadPage> {
       _panelOpacity = widget.initialSkinSettings!.panelOpacity;
       _padOpacity = widget.initialSkinSettings!.padOpacity;
     }
+    if (widget.settingsStore != null) {
+      _musicVolume = widget.settingsStore!.loadMusicVolume();
+    }
+    _playerStateSubscription = _musicPlayer.onPlayerStateChanged.listen((state) {
+      if (mounted) {
+        setState(() {
+          _isMusicPlaying = state == PlayerState.playing;
+        });
+      }
+    });
+    _durationSubscription = _musicPlayer.onDurationChanged.listen((d) {
+      if (mounted) {
+        setState(() {
+          _musicDuration = d;
+        });
+      }
+    });
+    _positionSubscription = _musicPlayer.onPositionChanged.listen((p) {
+      if (mounted) {
+        setState(() {
+          _musicPosition = p;
+        });
+      }
+    });
   }
 
   Preset get _preset => SampleCatalog.presets[widget.state.activePresetIndex];
@@ -155,24 +192,69 @@ class _DrumPadPageState extends State<DrumPadPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: _MGRColors.surface2,
-          title: const Text('Atur volume pad'),
+          title: const Text('Pengaturan Volume'),
           content: SizedBox(
             width: 420,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: DrumPadState.padCount,
-              itemBuilder: (context, index) => Row(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(width: 42, child: Text('P${index + 1}')),
-                  Expanded(
-                    child: Slider(
-                      value: widget.state.padVolumes[index],
-                      onChanged: (value) {
-                        setDialogState(
-                          () => widget.state.setPadVolume(index, value),
-                        );
-                        setState(() {});
-                      },
+                  Row(
+                    children: [
+                      const Icon(Icons.music_note, color: Colors.tealAccent, size: 20),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Volume Musik Pengiring',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${(_musicVolume * 100).toInt()}%',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.tealAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Slider(
+                    value: _isMusicMuted ? 0.0 : _musicVolume,
+                    activeColor: Colors.tealAccent,
+                    onChanged: (value) {
+                      setDialogState(() {
+                        _musicVolume = value;
+                        _isMusicMuted = value == 0.0;
+                      });
+                      _setMusicVolume(value);
+                    },
+                  ),
+                  const Divider(color: Colors.white24, height: 24),
+                  const Text(
+                    'Volume Pad Per Unit',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: DrumPadState.padCount,
+                    itemBuilder: (context, index) => Row(
+                      children: [
+                        SizedBox(width: 42, child: Text('P${index + 1}')),
+                        Expanded(
+                          child: Slider(
+                            value: widget.state.padVolumes[index],
+                            onChanged: (value) {
+                              setDialogState(
+                                () => widget.state.setPadVolume(index, value),
+                              );
+                              setState(() {});
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -206,15 +288,89 @@ class _DrumPadPageState extends State<DrumPadPage> {
       final files = await FilePicker.pickFiles(type: FileType.audio);
       final file = files.isEmpty ? null : files.single;
       if (!mounted || file?.path == null) return;
+      await _musicPlayer.stop();
       await _musicPlayer.setReleaseMode(ReleaseMode.loop);
+      await _musicPlayer.setVolume(_isMusicMuted ? 0.0 : _musicVolume);
       await _musicPlayer.play(DeviceFileSource(file!.path!));
       if (mounted) {
+        setState(() {
+          _currentMusicName = file.name;
+          _isMusicPlaying = true;
+          _musicPosition = Duration.zero;
+          _musicDuration = Duration.zero;
+          if (_mainMenuOpen) {
+            _mainMenuOpen = false;
+          }
+        });
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Musik diputar: ${file.name}')));
       }
     } catch (_) {
       _showError('Musik tidak dapat diputar. Coba lagi.');
+    }
+  }
+
+  Future<void> _toggleMusicPlayPause() async {
+    try {
+      if (_isMusicPlaying) {
+        await _musicPlayer.pause();
+      } else {
+        await _musicPlayer.resume();
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _seekMusicRelative(int seconds) async {
+    try {
+      var target = _musicPosition + Duration(seconds: seconds);
+      if (target < Duration.zero) target = Duration.zero;
+      if (_musicDuration > Duration.zero && target > _musicDuration) {
+        target = _musicDuration;
+      }
+      await _musicPlayer.seek(target);
+    } catch (_) {}
+  }
+
+  Future<void> _seekMusicTo(Duration position) async {
+    try {
+      await _musicPlayer.seek(position);
+    } catch (_) {}
+  }
+
+  Future<void> _stopMusic() async {
+    try {
+      await _musicPlayer.stop();
+    } catch (_) {}
+    if (mounted) {
+      setState(() {
+        _currentMusicName = null;
+        _isMusicPlaying = false;
+        _musicPosition = Duration.zero;
+        _musicDuration = Duration.zero;
+      });
+    }
+  }
+
+  Future<void> _setMusicVolume(double volume) async {
+    final clamped = volume.clamp(0.0, 1.0);
+    setState(() {
+      _musicVolume = clamped;
+      _isMusicMuted = clamped == 0.0;
+    });
+    try {
+      await _musicPlayer.setVolume(clamped);
+    } catch (_) {}
+    await widget.settingsStore?.saveMusicVolume(clamped);
+  }
+
+  Future<void> _toggleMusicMute() async {
+    if (_isMusicMuted) {
+      final restore = _preMuteVolume > 0.0 ? _preMuteVolume : 0.5;
+      await _setMusicVolume(restore);
+    } else {
+      _preMuteVolume = _musicVolume > 0.0 ? _musicVolume : 0.5;
+      await _setMusicVolume(0.0);
     }
   }
 
@@ -581,6 +737,9 @@ class _DrumPadPageState extends State<DrumPadPage> {
 
   @override
   void dispose() {
+    _playerStateSubscription?.cancel();
+    _durationSubscription?.cancel();
+    _positionSubscription?.cancel();
     _musicPlayer.dispose();
     super.dispose();
   }
@@ -608,11 +767,24 @@ class _DrumPadPageState extends State<DrumPadPage> {
                 widget.onStateChanged?.call();
               },
               onAddMusic: _showAddMusic,
+              onStopMusic: _stopMusic,
               onStudioRecord: _showStudioRecord,
               onSkin: _showThemeAndBackground,
               onCustomPadSkin: _startPadSkinCustomization,
               onSave: _savePresetFile,
               onLoad: _loadPresetFile,
+              musicName: _currentMusicName,
+              isMusicPlaying: _isMusicPlaying,
+              musicPosition: _musicPosition,
+              musicDuration: _musicDuration,
+              musicVolume: _musicVolume,
+              isMusicMuted: _isMusicMuted,
+              onMusicPlayPause: _toggleMusicPlayPause,
+              onMusicSeekRelative: _seekMusicRelative,
+              onMusicSeekTo: _seekMusicTo,
+              onMusicStop: _stopMusic,
+              onMusicVolumeChanged: _setMusicVolume,
+              onMusicToggleMute: _toggleMusicMute,
             );
             if (landscape) {
               return Row(
@@ -834,6 +1006,7 @@ class _MainMenuSidebar extends StatelessWidget {
     required this.onVolume,
     required this.onToggleLeft,
     required this.onAddMusic,
+    required this.onStopMusic,
     required this.onStudioRecord,
     required this.onSkin,
     required this.onCustomPadSkin,
@@ -845,6 +1018,7 @@ class _MainMenuSidebar extends StatelessWidget {
   final VoidCallback onVolume;
   final VoidCallback onToggleLeft;
   final VoidCallback onAddMusic;
+  final VoidCallback onStopMusic;
   final VoidCallback onStudioRecord;
   final VoidCallback onSkin;
   final VoidCallback onCustomPadSkin;
@@ -882,18 +1056,34 @@ class _MainMenuSidebar extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 18),
-              _MenuAction(label: 'Atur volume pad', onPressed: onVolume),
+              _MenuAction(label: 'Atur volume pad & musik', onPressed: onVolume),
               _MenuAction(
                 label:
                     'Tangan kiri: ${state.leftHanded ? 'Aktif' : 'Nonaktif'}',
                 onPressed: onToggleLeft,
               ),
-              _MenuAction(label: 'Tambah musik', onPressed: onAddMusic),
+              _MenuAction(
+                label: musicName != null ? 'Ganti musik' : 'Tambah musik',
+                onPressed: onAddMusic,
+              ),
+              if (musicName != null)
+                _MenuAction(
+                  label: 'Stop musik',
+                  color: Colors.redAccent,
+                  onPressed: onStopMusic,
+                ),
               _MenuAction(label: 'Studio rekaman', onPressed: onStudioRecord),
               _MenuAction(label: 'Tema & Background', onPressed: onSkin),
               _MenuAction(label: 'Kustom gambar pad', onPressed: onCustomPadSkin),
               if (musicName != null)
-                Text('Musik: $musicName', style: const TextStyle(fontSize: 12)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  child: Text(
+                    'Musik aktif: $musicName',
+                    style: const TextStyle(fontSize: 12, color: Colors.tealAccent),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
               const SizedBox(height: 20),
               _MenuAction(
                 label: 'Kembali ke pad',
@@ -919,11 +1109,24 @@ class _InstrumentSidebar extends StatelessWidget {
     required this.onVolume,
     required this.onToggleLeft,
     required this.onAddMusic,
+    required this.onStopMusic,
     required this.onStudioRecord,
     required this.onSkin,
     required this.onCustomPadSkin,
     required this.onSave,
     required this.onLoad,
+    required this.musicName,
+    required this.isMusicPlaying,
+    required this.musicPosition,
+    required this.musicDuration,
+    required this.musicVolume,
+    required this.isMusicMuted,
+    required this.onMusicPlayPause,
+    required this.onMusicSeekRelative,
+    required this.onMusicSeekTo,
+    required this.onMusicStop,
+    required this.onMusicVolumeChanged,
+    required this.onMusicToggleMute,
   });
 
   final DrumPadState state;
@@ -935,78 +1138,339 @@ class _InstrumentSidebar extends StatelessWidget {
   final VoidCallback onVolume;
   final VoidCallback onToggleLeft;
   final VoidCallback onAddMusic;
+  final VoidCallback onStopMusic;
   final VoidCallback onStudioRecord;
   final VoidCallback onSkin;
   final VoidCallback onCustomPadSkin;
   final VoidCallback onSave;
   final VoidCallback onLoad;
 
+  final String? musicName;
+  final bool isMusicPlaying;
+  final Duration musicPosition;
+  final Duration musicDuration;
+  final double musicVolume;
+  final bool isMusicMuted;
+  final VoidCallback onMusicPlayPause;
+  final ValueChanged<int> onMusicSeekRelative;
+  final ValueChanged<Duration> onMusicSeekTo;
+  final VoidCallback onMusicStop;
+  final ValueChanged<double> onMusicVolumeChanged;
+  final VoidCallback onMusicToggleMute;
+
   @override
   Widget build(BuildContext context) {
     if (mainMenuOpen) {
       return _MainMenuSidebar(
         state: state,
-        musicName: null,
+        musicName: musicName,
         onClose: onCloseMainMenu,
         onVolume: onVolume,
         onToggleLeft: onToggleLeft,
         onAddMusic: onAddMusic,
+        onStopMusic: onStopMusic,
         onStudioRecord: onStudioRecord,
         onSkin: onSkin,
         onCustomPadSkin: onCustomPadSkin,
       );
     }
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: const BoxDecoration(
         color: _MGRColors.surface2,
         border: Border(right: BorderSide(color: _MGRColors.accent)),
       ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Image.asset(
-              'assets/ui/logodsx.webp',
-              key: const ValueKey('mgr-logo'),
-              height: 56,
-            ),
-          ),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            childAspectRatio: 1.65,
-            crossAxisSpacing: 4,
-            mainAxisSpacing: 4,
-            children: List.generate(
-              SampleCatalog.presets.length,
-              (index) => _RailButton(
-                key: ValueKey('preset-$index'),
-                label: index == 5 ? 'Drum' : 'Set ${index + 1}',
-                selected: state.activePresetIndex == index,
-                onPressed: () => onPresetSelected(index),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Image.asset(
+                'assets/ui/logodsx.webp',
+                key: const ValueKey('mgr-logo'),
+                height: 48,
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-          _ActionGrid(onEdit: onEdit, onSave: onSave, onLoad: onLoad),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: OutlinedButton(
-              key: const ValueKey('menu-main'),
-              onPressed: onMainMenu,
-              style: OutlinedButton.styleFrom(foregroundColor: _MGRColors.ink),
-              child: const FittedBox(child: Text('Menu utama')),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              childAspectRatio: 1.65,
+              crossAxisSpacing: 4,
+              mainAxisSpacing: 4,
+              children: List.generate(
+                SampleCatalog.presets.length,
+                (index) => _RailButton(
+                  key: ValueKey('preset-$index'),
+                  label: index == 5 ? 'Drum' : 'Set ${index + 1}',
+                  selected: state.activePresetIndex == index,
+                  onPressed: () => onPresetSelected(index),
+                ),
+              ),
             ),
+            const SizedBox(height: 8),
+            _ActionGrid(onEdit: onEdit, onSave: onSave, onLoad: onLoad),
+            if (musicName != null) ...[
+              _MusicPlayerSidebarCard(
+                musicName: musicName!,
+                isPlaying: isMusicPlaying,
+                position: musicPosition,
+                duration: musicDuration,
+                volume: musicVolume,
+                isMuted: isMusicMuted,
+                onPlayPause: onMusicPlayPause,
+                onSeekRelative: onMusicSeekRelative,
+                onSeekTo: onMusicSeekTo,
+                onStop: onMusicStop,
+                onVolumeChanged: onMusicVolumeChanged,
+                onToggleMute: onMusicToggleMute,
+              ),
+            ],
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: OutlinedButton(
+                key: const ValueKey('menu-main'),
+                onPressed: onMainMenu,
+                style: OutlinedButton.styleFrom(foregroundColor: _MGRColors.ink),
+                child: const FittedBox(child: Text('Menu utama')),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MusicPlayerSidebarCard extends StatelessWidget {
+  const _MusicPlayerSidebarCard({
+    required this.musicName,
+    required this.isPlaying,
+    required this.position,
+    required this.duration,
+    required this.volume,
+    required this.isMuted,
+    required this.onPlayPause,
+    required this.onSeekRelative,
+    required this.onSeekTo,
+    required this.onStop,
+    required this.onVolumeChanged,
+    required this.onToggleMute,
+  });
+
+  final String musicName;
+  final bool isPlaying;
+  final Duration position;
+  final Duration duration;
+  final double volume;
+  final bool isMuted;
+  final VoidCallback onPlayPause;
+  final ValueChanged<int> onSeekRelative;
+  final ValueChanged<Duration> onSeekTo;
+  final VoidCallback onStop;
+  final ValueChanged<double> onVolumeChanged;
+  final VoidCallback onToggleMute;
+
+  String _format(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    if (d.inHours > 0) {
+      final h = d.inHours.toString().padLeft(2, '0');
+      return '$h:$m:$s';
+    }
+    return '$m:$s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final posSec = position.inSeconds.toDouble();
+    final durSec = duration.inSeconds.toDouble();
+    final maxSec = durSec > 0 ? durSec : 1.0;
+    final clampedPos = posSec.clamp(0.0, maxSec);
+
+    return Container(
+      key: const ValueKey('music-player-card'),
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.tealAccent.withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header: Judul musik & Tombol Tutup/Stop
+          Row(
+            children: [
+              const Icon(Icons.music_note, size: 15, color: Colors.tealAccent),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  musicName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              InkWell(
+                key: const ValueKey('music-close-btn'),
+                onTap: onStop,
+                child: const Padding(
+                  padding: EdgeInsets.all(2),
+                  child: Icon(Icons.close, size: 16, color: Colors.redAccent),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+
+          // Waktu & Progress Slider
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _format(position),
+                style: const TextStyle(fontSize: 10, color: Colors.white70),
+              ),
+              Text(
+                _format(duration),
+                style: const TextStyle(fontSize: 10, color: Colors.white70),
+              ),
+            ],
+          ),
+          SliderTheme(
+            data: SliderThemeData(
+              trackHeight: 3,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 8),
+              activeTrackColor: Colors.tealAccent,
+              inactiveTrackColor: Colors.white24,
+              thumbColor: Colors.tealAccent,
+            ),
+            child: Slider(
+              value: clampedPos,
+              max: maxSec,
+              onChanged: durSec > 0
+                  ? (val) => onSeekTo(Duration(seconds: val.toInt()))
+                  : null,
+            ),
+          ),
+
+          // Tombol Kontrol: Mundur 10s, Play/Pause, Maju 10s, Stop
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              // Mundur 10s
+              InkWell(
+                key: const ValueKey('music-seek-back'),
+                onTap: () => onSeekRelative(-10),
+                borderRadius: BorderRadius.circular(20),
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(Icons.replay_10, size: 20, color: Colors.white70),
+                ),
+              ),
+              // Play / Pause
+              InkWell(
+                key: const ValueKey('music-play-pause'),
+                onTap: onPlayPause,
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Colors.tealAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isPlaying ? Icons.pause : Icons.play_arrow,
+                    size: 20,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+              // Maju 10s
+              InkWell(
+                key: const ValueKey('music-seek-forward'),
+                onTap: () => onSeekRelative(10),
+                borderRadius: BorderRadius.circular(20),
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(Icons.forward_10, size: 20, color: Colors.white70),
+                ),
+              ),
+              // Stop
+              InkWell(
+                key: const ValueKey('music-stop'),
+                onTap: onStop,
+                borderRadius: BorderRadius.circular(20),
+                child: const Padding(
+                  padding: EdgeInsets.all(4),
+                  child: Icon(Icons.stop, size: 20, color: Colors.redAccent),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+
+          // Volume Bar
+          Row(
+            children: [
+              InkWell(
+                key: const ValueKey('music-volume-mute-toggle'),
+                onTap: onToggleMute,
+                child: Icon(
+                  isMuted
+                      ? Icons.volume_off
+                      : (volume < 0.4 ? Icons.volume_down : Icons.volume_up),
+                  size: 16,
+                  color: isMuted ? Colors.redAccent : Colors.tealAccent,
+                ),
+              ),
+              Expanded(
+                child: SliderTheme(
+                  data: SliderThemeData(
+                    trackHeight: 2,
+                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 4),
+                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 8),
+                    activeTrackColor: Colors.amberAccent,
+                    inactiveTrackColor: Colors.white24,
+                    thumbColor: Colors.amberAccent,
+                  ),
+                  child: Slider(
+                    key: const ValueKey('music-volume-slider'),
+                    value: (isMuted ? 0.0 : volume).clamp(0.0, 1.0),
+                    onChanged: onVolumeChanged,
+                  ),
+                ),
+              ),
+              Text(
+                '${((isMuted ? 0.0 : volume) * 100).toInt()}%',
+                style: const TextStyle(fontSize: 10, color: Colors.white70),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 }
+
 
 class _ActionGrid extends StatelessWidget {
   const _ActionGrid({

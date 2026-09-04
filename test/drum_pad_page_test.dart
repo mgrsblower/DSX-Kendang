@@ -162,4 +162,31 @@ void main() {
 
     expect(find.text('Ketuk pad yang ingin diubah gambarnya'), findsNothing);
   });
+
+  testWidgets('opens volume dialog with backing music volume and pad volumes', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DrumPadPage(
+          state: DrumPadState(),
+          engine: RecordingAudioEngine(),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('menu-main')));
+    await tester.pump();
+    await tester.tap(find.text('Atur volume pad & musik'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pengaturan Volume'), findsOneWidget);
+    expect(find.text('Volume Musik Pengiring'), findsOneWidget);
+    expect(find.text('Volume Pad Per Unit'), findsOneWidget);
+    expect(find.text('Selesai'), findsOneWidget);
+
+    await tester.tap(find.text('Selesai'));
+    await tester.pumpAndSettle();
+    expect(find.text('Pengaturan Volume'), findsNothing);
+  });
 }
