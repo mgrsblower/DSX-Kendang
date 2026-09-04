@@ -303,7 +303,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
   }
 
   Future<void> _showSoundSourceDialog(int targetPad) async {
-    var source = _preset.samples[targetPad];
+    var source = _customSamples[targetPad] ?? _preset.samples[targetPad];
     final sources = [
       for (final preset in SampleCatalog.presets) ...preset.samples,
     ];
@@ -312,55 +312,90 @@ class _DrumPadPageState extends State<DrumPadPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: _MGRColors.surface2,
-          title: Text('Suara pad ${targetPad + 1}'),
-          content: Row(
+          title: Text('Ubah Suara Pad ${targetPad + 1}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: DropdownButtonFormField<SampleRef>(
-                  initialValue: source,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Pilih suara bawaan',
+              Text(
+                'Suara saat ini: ${_samples[targetPad].name}',
+                style: const TextStyle(fontSize: 13, color: Colors.white70),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<SampleRef>(
+                      initialValue: source,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Pilih suara bawaan',
+                      ),
+                      items: sources
+                          .map(
+                            (sample) => DropdownMenuItem(
+                              value: sample,
+                              child: Text(sample.name),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        final selected = value ?? source;
+                        setDialogState(() => source = selected);
+                        _playSample(
+                          selected,
+                          widget.state.masterVolume *
+                              widget.state.padVolumes[targetPad],
+                        );
+                      },
+                    ),
                   ),
-                  items: sources
-                      .map(
-                        (sample) => DropdownMenuItem(
-                          value: sample,
-                          child: Text(sample.name),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    final selected = value ?? source;
-                    setDialogState(() => source = selected);
-                    _playSample(
-                      selected,
+                  const SizedBox(width: 8),
+                  IconButton(
+                    key: const ValueKey('preview-sound'),
+                    tooltip: 'Dengarkan suara',
+                    onPressed: () => _playSample(
+                      source,
                       widget.state.masterVolume *
                           widget.state.padVolumes[targetPad],
-                    );
-                  },
-                ),
+                    ),
+                    icon: const Icon(Icons.play_arrow, color: _MGRColors.accent),
+                  ),
+                ],
               ),
-              IconButton(
-                key: const ValueKey('preview-sound'),
-                tooltip: 'Dengarkan suara',
-                onPressed: () => _playSample(
-                  source,
-                  widget.state.masterVolume *
-                      widget.state.padVolumes[targetPad],
-                ),
-                icon: const Icon(Icons.play_arrow),
+              const SizedBox(height: 8),
+              const Text(
+                'Tekan "Gunakan suara" untuk konfirmasi perubahan suara pad ini.',
+                style: TextStyle(fontSize: 11, color: Colors.grey),
               ),
             ],
           ),
           actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal'),
+            ),
+            if (_customSamples.containsKey(targetPad))
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                onPressed: () {
+                  setState(() => _customSamples.remove(targetPad));
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    SnackBar(
+                      content: Text('Suara Pad ${targetPad + 1} dikembalikan ke default'),
+                    ),
+                  );
+                },
+                child: const Text('Reset Asli'),
+              ),
             FilledButton(
               onPressed: () {
                 setState(() => _customSamples[targetPad] = source);
                 Navigator.pop(context);
                 ScaffoldMessenger.of(this.context).showSnackBar(
                   SnackBar(
-                    content: Text('Suara pad ${targetPad + 1} diperbarui'),
+                    content: Text('Suara Pad ${targetPad + 1} diperbarui ke ${source.name}'),
                   ),
                 );
               },
@@ -377,15 +412,103 @@ class _DrumPadPageState extends State<DrumPadPage> {
       final files = await FilePicker.pickFiles(type: FileType.audio);
       final file = files.isEmpty ? null : files.single;
       if (!mounted || file?.path == null) return;
-      setState(
-        () => _customSamples[targetPad] = SampleRef(
-          name: file!.name,
-          assetPath: file.path!,
+
+      final sampleCandidate = SampleRef(
+        name: file!.name,
+        assetPath: file.path!,
+      );
+
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: _MGRColors.surface2,
+          title: Text('Konfirmasi Impor Suara Pad ${targetPad + 1}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Suara saat ini: ${_samples[targetPad].name}',
+                style: const TextStyle(fontSize: 13, color: Colors.white70),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.black38,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: _MGRColors.accent.withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.audio_file, color: _MGRColors.accent, size: 28),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            file.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Builder(
+                            builder: (context) {
+                              try {
+                                final bytes = File(file.path!).lengthSync();
+                                return Text(
+                                  '${(bytes / 1024).toStringAsFixed(1)} KB',
+                                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                                );
+                              } catch (_) {
+                                return const SizedBox.shrink();
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Dengarkan file audio',
+                      icon: const Icon(Icons.play_circle_filled, color: _MGRColors.accent, size: 30),
+                      onPressed: () => _playSample(
+                        sampleCandidate,
+                        widget.state.masterVolume * widget.state.padVolumes[targetPad],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Apakah Anda yakin ingin menerapkan file audio ini pada pad tersebut?',
+                style: TextStyle(fontSize: 12, color: Colors.white),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Terapkan Suara'),
+            ),
+          ],
         ),
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Suara diimpor ke pad ${targetPad + 1}')),
-      );
+
+      if (mounted && confirmed == true) {
+        setState(() => _customSamples[targetPad] = sampleCandidate);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Suara "${file.name}" berhasil dipasang pada Pad ${targetPad + 1}')),
+        );
+      }
     } catch (_) {
       _showError('Suara tidak dapat diimpor. Coba lagi.');
     }
@@ -529,6 +652,10 @@ class _DrumPadPageState extends State<DrumPadPage> {
 
   Widget _buildInstrumentSurface() {
     final indices = widget.state.orderedPadIndices();
+    final isSelectingPad = _isSelectingBuiltinPad ||
+        _isSelectingImportPad ||
+        _isCustomizingPadSkin;
+
     return Column(
       children: [
         if (_isCustomizingPadSkin)
@@ -562,6 +689,68 @@ class _DrumPadPageState extends State<DrumPadPage> {
               ],
             ),
           ),
+        if (_isSelectingBuiltinPad)
+          Container(
+            color: const Color(0xFFFF9800),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            child: Row(
+              children: [
+                const Icon(Icons.tune, color: Colors.black, size: 20),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Ketuk pad yang ingin diubah suaranya',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                    minimumSize: const Size(60, 32),
+                  ),
+                  onPressed: () => setState(() => _isSelectingBuiltinPad = false),
+                  child: const Text('Batal'),
+                ),
+              ],
+            ),
+          ),
+        if (_isSelectingImportPad)
+          Container(
+            color: const Color(0xFF00ACC1),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            child: Row(
+              children: [
+                const Icon(Icons.library_music, color: Colors.black, size: 20),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Ketuk pad yang ingin diimpor suaranya',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                    minimumSize: const Size(60, 32),
+                  ),
+                  onPressed: () => setState(() => _isSelectingImportPad = false),
+                  child: const Text('Batal'),
+                ),
+              ],
+            ),
+          ),
         if (_error != null)
           MaterialBanner(
             backgroundColor: Colors.red.shade900,
@@ -573,12 +762,12 @@ class _DrumPadPageState extends State<DrumPadPage> {
               ),
             ],
           ),
-        Expanded(child: _buildPadRows(indices)),
+        Expanded(child: _buildPadRows(indices, isSelectingPad)),
       ],
     );
   }
 
-  Widget _buildPadRows(List<int> indices) {
+  Widget _buildPadRows(List<int> indices, bool isSelectingPad) {
     final rowWeights = [1, 2, 2, 1];
     final panelAsset = _panelAsset();
     return Stack(
@@ -608,8 +797,10 @@ class _DrumPadPageState extends State<DrumPadPage> {
                         child: DrumPadButton(
                           key: ValueKey('pad-$index'),
                           label: _samples[index].name,
+                          padNumber: index + 1,
                           assetPath: _padAsset(index),
                           overlayOpacity: _padOpacity,
+                          isSelecting: isSelectingPad,
                           onPressed: () {
                             if (_isCustomizingPadSkin) {
                               _showPadSkinPicker(index);
@@ -977,14 +1168,18 @@ class DrumPadButton extends StatefulWidget {
     super.key,
     required this.label,
     required this.onPressed,
+    this.padNumber,
     this.assetPath,
     this.overlayOpacity = 0.12,
+    this.isSelecting = false,
   });
 
   final String label;
   final VoidCallback onPressed;
+  final int? padNumber;
   final String? assetPath;
   final double overlayOpacity;
+  final bool isSelecting;
 
   @override
   State<DrumPadButton> createState() => _DrumPadButtonState();
@@ -996,7 +1191,7 @@ class _DrumPadButtonState extends State<DrumPadButton> {
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
-    label: 'Pad ${widget.label}',
+    label: 'Pad ${widget.padNumber ?? ''} ${widget.label}',
     child: Listener(
       onPointerDown: (_) => setState(() => _pressed = true),
       onPointerUp: (_) => setState(() => _pressed = false),
@@ -1011,11 +1206,16 @@ class _DrumPadButtonState extends State<DrumPadButton> {
             padding: EdgeInsets.zero,
             backgroundColor: _MGRColors.surface3,
             foregroundColor: _MGRColors.ink,
-            elevation: 5,
-            shadowColor: Colors.black,
+            elevation: widget.isSelecting ? 8 : 5,
+            shadowColor: widget.isSelecting
+                ? Colors.amberAccent.withValues(alpha: 0.5)
+                : Colors.black,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
-              side: const BorderSide(color: _MGRColors.accent, width: .7),
+              side: BorderSide(
+                color: widget.isSelecting ? Colors.amberAccent : _MGRColors.accent,
+                width: widget.isSelecting ? 2.0 : .7,
+              ),
             ),
           ),
           child: ClipRRect(
@@ -1026,6 +1226,27 @@ class _DrumPadButtonState extends State<DrumPadButton> {
                 if (widget.assetPath != null)
                   Image.asset(widget.assetPath!, fit: BoxFit.cover),
                 Container(color: Color.fromRGBO(0, 0, 0, widget.overlayOpacity)),
+                if (widget.isSelecting && widget.padNumber != null)
+                  Positioned(
+                    top: 4,
+                    left: 4,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.75),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.amberAccent, width: 1),
+                      ),
+                      child: Text(
+                        'P${widget.padNumber}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amberAccent,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),

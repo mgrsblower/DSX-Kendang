@@ -75,11 +75,17 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('edit-sound')));
     await tester.pumpAndSettle();
+    expect(find.text('Ketuk pad yang ingin diubah suaranya'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('pad-0')));
     await tester.pumpAndSettle();
     expect(find.text('Pilih suara bawaan'), findsOneWidget);
     expect(find.text('IMPORT FILE'), findsNothing);
     expect(find.byKey(const ValueKey('preview-sound')), findsOneWidget);
+    expect(find.text('Gunakan suara'), findsOneWidget);
+    expect(find.text('Batal'), findsOneWidget);
+    await tester.tap(find.text('Batal'));
+    await tester.pumpAndSettle();
+    expect(find.text('Pilih suara bawaan'), findsNothing);
   });
 
   testWidgets('opens main menu as an in-place sidebar', (tester) async {
