@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('SkinCatalog exposes all panels and pad options', () {
-    expect(SkinCatalog.panels.length, greaterThanOrEqualTo(30));
-    expect(SkinCatalog.padOptions.length, greaterThanOrEqualTo(30));
-    expect(SkinCatalog.packs.length, greaterThanOrEqualTo(30));
+    expect(SkinCatalog.panels.length, greaterThanOrEqualTo(34));
+    expect(SkinCatalog.padOptions.length, greaterThanOrEqualTo(34));
+    expect(SkinCatalog.packs.length, greaterThanOrEqualTo(34));
   });
 
   test('SkinCatalog resolves new 14 themes correctly', () {
@@ -16,6 +16,14 @@ void main() {
     expect(
       SkinCatalog.resolvePad(0, {}, 'material_design'),
       'assets/ui/skins/pad_material_design.webp',
+    );
+    expect(
+      SkinCatalog.resolvePanel(null, 'naruto'),
+      'assets/ui/skins/panel_naruto.webp',
+    );
+    expect(
+      SkinCatalog.resolvePad(0, {}, 'one_piece'),
+      'assets/ui/skins/pad_one_piece.webp',
     );
   });
 

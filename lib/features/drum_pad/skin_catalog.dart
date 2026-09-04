@@ -200,6 +200,30 @@ class SkinCatalog {
       padAsset: 'assets/ui/skins/pad_abstract.webp',
       panelAsset: 'assets/ui/skins/panel_abstract.webp',
     ),
+    SkinOption(
+      id: 'naruto',
+      label: 'Naruto',
+      padAsset: 'assets/ui/skins/pad_naruto.webp',
+      panelAsset: 'assets/ui/skins/panel_naruto.webp',
+    ),
+    SkinOption(
+      id: 'one_piece',
+      label: 'One Piece',
+      padAsset: 'assets/ui/skins/pad_one_piece.webp',
+      panelAsset: 'assets/ui/skins/panel_one_piece.webp',
+    ),
+    SkinOption(
+      id: 'tsubasa',
+      label: 'Captain Tsubasa',
+      padAsset: 'assets/ui/skins/pad_tsubasa.webp',
+      panelAsset: 'assets/ui/skins/panel_tsubasa.webp',
+    ),
+    SkinOption(
+      id: 'rimuru',
+      label: 'Rimuru Tempest',
+      padAsset: 'assets/ui/skins/pad_rimuru.webp',
+      panelAsset: 'assets/ui/skins/panel_rimuru.webp',
+    ),
   ];
 
   static const List<MapEntry<String, String?>> panels = [
@@ -233,6 +257,10 @@ class SkinCatalog {
     MapEntry('Anime Manga', 'assets/ui/skins/panel_anime_manga.webp'),
     MapEntry('Memphis', 'assets/ui/skins/panel_memphis.webp'),
     MapEntry('Abstract', 'assets/ui/skins/panel_abstract.webp'),
+    MapEntry('Naruto', 'assets/ui/skins/panel_naruto.webp'),
+    MapEntry('One Piece', 'assets/ui/skins/panel_one_piece.webp'),
+    MapEntry('Captain Tsubasa', 'assets/ui/skins/panel_tsubasa.webp'),
+    MapEntry('Rimuru Tempest', 'assets/ui/skins/panel_rimuru.webp'),
   ];
 
   static const List<MapEntry<String, String>> padOptions = [
@@ -266,6 +294,10 @@ class SkinCatalog {
     MapEntry('Anime Manga', 'assets/ui/skins/pad_anime_manga.webp'),
     MapEntry('Memphis', 'assets/ui/skins/pad_memphis.webp'),
     MapEntry('Abstract', 'assets/ui/skins/pad_abstract.webp'),
+    MapEntry('Naruto', 'assets/ui/skins/pad_naruto.webp'),
+    MapEntry('One Piece', 'assets/ui/skins/pad_one_piece.webp'),
+    MapEntry('Captain Tsubasa', 'assets/ui/skins/pad_tsubasa.webp'),
+    MapEntry('Rimuru Tempest', 'assets/ui/skins/pad_rimuru.webp'),
   ];
 
   static String? resolvePanel(String? customPanel, String globalPackId) {
