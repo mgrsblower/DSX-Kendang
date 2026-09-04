@@ -1,6 +1,20 @@
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/drum_pad/drum_pad_state.dart';
+
+class SavedSkinSettings {
+  final String? activePanelAsset;
+  final String globalPadSkin;
+  final Map<int, String> customPadAssets;
+
+  const SavedSkinSettings({
+    this.activePanelAsset,
+    required this.globalPadSkin,
+    required this.customPadAssets,
+  });
+}
 
 class SettingsStore {
   const SettingsStore(this._preferences);
@@ -49,6 +63,11 @@ class SettingsStore {
     return value is bool ? value : null;
   }
 
+  String? _readString(String key) {
+    final value = _preferences.get(key);
+    return value is String ? value : null;
+  }
+
   Future<void> save(DrumPadState state) async {
     await _preferences.setInt('active_preset', state.activePresetIndex);
     await _preferences.setDouble('master_volume', state.masterVolume);
@@ -57,5 +76,56 @@ class SettingsStore {
       state.padVolumes.map((value) => value.toString()).toList(),
     );
     await _preferences.setBool('left_handed', state.leftHanded);
+  }
+
+  Future<void> saveSkinSettings(SavedSkinSettings settings) async {
+    if (settings.activePanelAsset != null) {
+      await _preferences.setString(
+        'active_panel_asset',
+        settings.activePanelAsset!,
+      );
+    } else {
+      await _preferences.remove('active_panel_asset');
+    }
+
+    await _preferences.setString(
+      'global_pad_skin',
+      settings.globalPadSkin,
+    );
+
+    final map = settings.customPadAssets.map(
+      (k, v) => MapEntry(k.toString(), v),
+    );
+    await _preferences.setString('custom_pad_assets', jsonEncode(map));
+  }
+
+  Future<SavedSkinSettings> loadSkinSettings() async {
+    final panel = _readString('active_panel_asset');
+    final globalPad = _readString('global_pad_skin') ?? 'default';
+    final customRaw = _readString('custom_pad_assets');
+
+    final customPads = <int, String>{};
+    if (customRaw != null) {
+      try {
+        final decoded = jsonDecode(customRaw);
+        if (decoded is Map) {
+          for (final entry in decoded.entries) {
+            final key = int.tryParse(entry.key.toString());
+            final val = entry.value?.toString();
+            if (key != null && val != null && key >= 0 && key < DrumPadState.padCount) {
+              customPads[key] = val;
+            }
+          }
+        }
+      } catch (_) {
+        // ignore invalid json and return empty custom pads
+      }
+    }
+
+    return SavedSkinSettings(
+      activePanelAsset: panel,
+      globalPadSkin: globalPad,
+      customPadAssets: customPads,
+    );
   }
 }

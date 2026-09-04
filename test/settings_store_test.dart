@@ -38,4 +38,40 @@ void main() {
     expect(loaded.padVolumes, everyElement(1));
     expect(loaded.leftHanded, isFalse);
   });
+
+  test('saves and loads skin settings', () async {
+    SharedPreferences.setMockInitialValues({});
+    final preferences = await SharedPreferences.getInstance();
+    final store = SettingsStore(preferences);
+
+    final skinSettings = const SavedSkinSettings(
+      activePanelAsset: 'assets/ui/panel_kayu.webp',
+      globalPadSkin: 'batik_hd',
+      customPadAssets: {
+        0: 'assets/ui/pad_metal.webp',
+        5: 'assets/ui/pad_karakter.webp',
+      },
+    );
+
+    await store.saveSkinSettings(skinSettings);
+    final loaded = await store.loadSkinSettings();
+
+    expect(loaded.activePanelAsset, 'assets/ui/panel_kayu.webp');
+    expect(loaded.globalPadSkin, 'batik_hd');
+    expect(loaded.customPadAssets[0], 'assets/ui/pad_metal.webp');
+    expect(loaded.customPadAssets[5], 'assets/ui/pad_karakter.webp');
+  });
+
+  test('skin settings loads safe default when empty or corrupt', () async {
+    SharedPreferences.setMockInitialValues({
+      'custom_pad_assets': 'invalid-json',
+    });
+    final preferences = await SharedPreferences.getInstance();
+    final store = SettingsStore(preferences);
+
+    final loaded = await store.loadSkinSettings();
+    expect(loaded.activePanelAsset, isNull);
+    expect(loaded.globalPadSkin, 'default');
+    expect(loaded.customPadAssets, isEmpty);
+  });
 }
