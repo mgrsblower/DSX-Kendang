@@ -1,4 +1,4 @@
-# MGR Drum Kendang
+# MGR Kendang
 
 A new Flutter project.
 

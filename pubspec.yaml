@@ -65,6 +65,7 @@ flutter:
   assets:
     - assets/presets/
     - assets/ui/
+    - assets/ui/skins/
 
   # To add assets to your application, add an assets section, like this:
   # assets:

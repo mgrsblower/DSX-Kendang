@@ -11,6 +11,95 @@ import '../../audio/sample_catalog.dart';
 import '../../storage/preset_archive.dart';
 import 'drum_pad_state.dart';
 
+class _SkinOption {
+  const _SkinOption({
+    required this.id,
+    required this.label,
+    required this.padAsset,
+    required this.panelAsset,
+  });
+
+  final String id;
+  final String label;
+  final String padAsset;
+  final String panelAsset;
+}
+
+const _skinOptions = [
+  _SkinOption(
+    id: 'batik',
+    label: 'Batik HD',
+    padAsset: 'assets/ui/skins/pad_batik.webp',
+    panelAsset: 'assets/ui/skins/panel_batik.webp',
+  ),
+  _SkinOption(
+    id: 'batik-flat',
+    label: 'Batik Flat',
+    padAsset: 'assets/ui/skins/pad_batik_flat.webp',
+    panelAsset: 'assets/ui/skins/panel_batik_flat.webp',
+  ),
+  _SkinOption(
+    id: 'carbon-orange',
+    label: 'Carbon Orange HD',
+    padAsset: 'assets/ui/skins/pad_carbon_orange.webp',
+    panelAsset: 'assets/ui/skins/panel_carbon_orange.webp',
+  ),
+  _SkinOption(
+    id: 'carbon-orange-flat',
+    label: 'Carbon Orange Flat',
+    padAsset: 'assets/ui/skins/pad_carbon_orange_flat.webp',
+    panelAsset: 'assets/ui/skins/panel_carbon_orange_flat.webp',
+  ),
+  _SkinOption(
+    id: 'crimson-stage',
+    label: 'Crimson Stage HD',
+    padAsset: 'assets/ui/skins/pad_crimson_stage.webp',
+    panelAsset: 'assets/ui/skins/panel_crimson_stage.webp',
+  ),
+  _SkinOption(
+    id: 'crimson-stage-flat',
+    label: 'Crimson Stage Flat',
+    padAsset: 'assets/ui/skins/pad_crimson_stage_flat.webp',
+    panelAsset: 'assets/ui/skins/panel_crimson_stage_flat.webp',
+  ),
+  _SkinOption(
+    id: 'emerald-islamic',
+    label: 'Emerald Islamic HD',
+    padAsset: 'assets/ui/skins/pad_emerald_islamic.webp',
+    panelAsset: 'assets/ui/skins/panel_emerald_islamic.webp',
+  ),
+  _SkinOption(
+    id: 'emerald-islamic-flat',
+    label: 'Emerald Islamic Flat',
+    padAsset: 'assets/ui/skins/pad_emerald_islamic_flat.webp',
+    panelAsset: 'assets/ui/skins/panel_emerald_islamic_flat.webp',
+  ),
+  _SkinOption(
+    id: 'leather-vintage',
+    label: 'Leather Vintage HD',
+    padAsset: 'assets/ui/skins/pad_leather_vintage.webp',
+    panelAsset: 'assets/ui/skins/panel_leather_vintage.webp',
+  ),
+  _SkinOption(
+    id: 'leather-vintage-flat',
+    label: 'Leather Vintage Flat',
+    padAsset: 'assets/ui/skins/pad_leather_vintage_flat.webp',
+    panelAsset: 'assets/ui/skins/panel_leather_vintage_flat.webp',
+  ),
+  _SkinOption(
+    id: 'neon-cyber',
+    label: 'Neon Cyber HD',
+    padAsset: 'assets/ui/skins/pad_neon_cyber.webp',
+    panelAsset: 'assets/ui/skins/panel_neon_cyber.webp',
+  ),
+  _SkinOption(
+    id: 'neon-cyber-flat',
+    label: 'Neon Cyber Flat',
+    padAsset: 'assets/ui/skins/pad_neon_cyber_flat.webp',
+    panelAsset: 'assets/ui/skins/panel_neon_cyber_flat.webp',
+  ),
+];
+
 class DrumPadPage extends StatefulWidget {
   const DrumPadPage({
     super.key,
@@ -45,22 +134,21 @@ class _DrumPadPageState extends State<DrumPadPage> {
   );
 
   String _padAsset(int index) {
-    if (_padSkin == 'karakter') return 'assets/ui/pad_karakter.webp';
     if (_padSkin == 'kayu') return 'assets/ui/pad_kayu.webp';
-    if (_padSkin == 'metal') return 'assets/ui/pad_metal.webp';
+    for (final skin in _skinOptions) {
+      if (_padSkin == skin.id) return skin.padAsset;
+    }
     return 'assets/ui/pad${index + 1}.webp';
   }
 
   String? _panelAsset() {
     switch (_padSkin) {
-      case 'karakter':
-      case 'grafiti':
-        return 'assets/ui/panel_grafiti.webp';
       case 'kayu':
         return 'assets/ui/panel_kayu.webp';
-      case 'metal':
-        return 'assets/ui/panel_metal.webp';
       default:
+        for (final skin in _skinOptions) {
+          if (_padSkin == skin.id) return skin.panelAsset;
+        }
         return null;
     }
   }
@@ -74,8 +162,10 @@ class _DrumPadPageState extends State<DrumPadPage> {
     try {
       await widget.engine.play(sample, volume);
       if (mounted) setState(() => _error = null);
-    } catch (error) {
-      if (mounted) setState(() => _error = 'Audio gagal dimainkan: $error');
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'Suara tidak dapat diputar. Coba lagi.');
+      }
     }
   }
 
@@ -84,20 +174,24 @@ class _DrumPadPageState extends State<DrumPadPage> {
     widget.onStateChanged?.call();
   }
 
+  void _showError(String message) {
+    if (mounted) setState(() => _error = message);
+  }
+
   Future<void> _showEditMenu() async {
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: _MGRColors.surface2,
-        title: const Text('EDIT'),
+        title: const Text('Ubah'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
               key: const ValueKey('edit-sound'),
               leading: const Icon(Icons.tune),
-              title: const Text('Edit sound'),
-              subtitle: const Text('Ganti sound dari bawaan APK'),
+              title: const Text('Ubah suara'),
+              subtitle: const Text('Pilih suara bawaan untuk pad'),
               onTap: () {
                 Navigator.pop(context);
                 _startBuiltinSoundEdit();
@@ -106,8 +200,8 @@ class _DrumPadPageState extends State<DrumPadPage> {
             ListTile(
               key: const ValueKey('import-sound'),
               leading: const Icon(Icons.library_music),
-              title: const Text('Import sound'),
-              subtitle: const Text('Import file ke satu pad'),
+              title: const Text('Impor suara'),
+              subtitle: const Text('Gunakan file suara untuk satu pad'),
               onTap: () {
                 Navigator.pop(context);
                 _showImportSoundDialog();
@@ -125,7 +219,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: _MGRColors.surface2,
-          title: const Text('Edit volume pad'),
+          title: const Text('Atur volume pad'),
           content: SizedBox(
             width: 420,
             child: ListView.builder(
@@ -155,7 +249,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
                 widget.onStateChanged?.call();
                 Navigator.pop(context);
               },
-              child: const Text('SELESAI'),
+              child: const Text('Selesai'),
             ),
           ],
         ),
@@ -172,50 +266,52 @@ class _DrumPadPageState extends State<DrumPadPage> {
   }
 
   Future<void> _showAddMusic() async {
-    final files = await FilePicker.pickFiles(type: FileType.audio);
-    final file = files.isEmpty ? null : files.single;
-    if (!mounted || file?.path == null) return;
     try {
+      final files = await FilePicker.pickFiles(type: FileType.audio);
+      final file = files.isEmpty ? null : files.single;
+      if (!mounted || file?.path == null) return;
       await _musicPlayer.setReleaseMode(ReleaseMode.loop);
       await _musicPlayer.play(DeviceFileSource(file!.path!));
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Music diputar: ${file.name}')));
+        ).showSnackBar(SnackBar(content: Text('Musik diputar: ${file.name}')));
       }
-    } catch (error) {
-      if (mounted) setState(() => _error = 'Music gagal diputar: $error');
+    } catch (_) {
+      _showError('Musik tidak dapat diputar. Coba lagi.');
     }
   }
 
   Future<void> _showSkinPicker() async {
     final selected = await showDialog<String>(
       context: context,
-      builder: (context) => SimpleDialog(
+      builder: (context) => AlertDialog(
         backgroundColor: _MGRColors.surface2,
-        title: const Text('GANTI TEMA / SKIN'),
-        children: [
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, 'default'),
-            child: const Text('SKIN ORIGINAL'),
+        title: const Text('Pilih tema'),
+        content: SizedBox(
+          width: 420,
+          height: 560,
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                ListTile(
+                  title: const Text('Asli'),
+                  onTap: () => Navigator.pop(context, 'default'),
+                ),
+                ListTile(
+                  title: const Text('Kayu'),
+                  onTap: () => Navigator.pop(context, 'kayu'),
+                ),
+                ..._skinOptions.map(
+                  (skin) => ListTile(
+                    title: Text(skin.label),
+                    onTap: () => Navigator.pop(context, skin.id),
+                  ),
+                ),
+              ],
+            ),
           ),
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, 'karakter'),
-            child: const Text('SKIN KARAKTER'),
-          ),
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, 'kayu'),
-            child: const Text('SKIN KAYU'),
-          ),
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, 'metal'),
-            child: const Text('SKIN METAL'),
-          ),
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(context, 'grafiti'),
-            child: const Text('SKIN GRAFITI'),
-          ),
-        ],
+        ),
       ),
     );
     if (mounted && selected != null) setState(() => _padSkin = selected);
@@ -226,14 +322,14 @@ class _DrumPadPageState extends State<DrumPadPage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: _MGRColors.surface2,
-        title: const Text('STUDIO RECORD'),
+        title: const Text('Studio rekaman'),
         content: const Text(
-          'Panel rekaman siap ditambahkan. Mesin pad tetap aktif saat panel ini dibuka.',
+          'Fitur rekaman belum tersedia. Tutup panel ini untuk kembali bermain.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('TUTUP'),
+            child: const Text('Tutup'),
           ),
         ],
       ),
@@ -258,7 +354,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: _MGRColors.surface2,
-          title: Text('SUARA PAD ${targetPad + 1}'),
+          title: Text('Suara pad ${targetPad + 1}'),
           content: Row(
             children: [
               Expanded(
@@ -266,7 +362,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
                   initialValue: source,
                   isExpanded: true,
                   decoration: const InputDecoration(
-                    labelText: 'Pilih suara dari project',
+                    labelText: 'Pilih suara bawaan',
                   ),
                   items: sources
                       .map(
@@ -289,7 +385,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
               ),
               IconButton(
                 key: const ValueKey('preview-sound'),
-                tooltip: 'Preview sound',
+                tooltip: 'Dengarkan suara',
                 onPressed: () => _playSample(
                   source,
                   widget.state.masterVolume *
@@ -305,10 +401,12 @@ class _DrumPadPageState extends State<DrumPadPage> {
                 setState(() => _customSamples[targetPad] = source);
                 Navigator.pop(context);
                 ScaffoldMessenger.of(this.context).showSnackBar(
-                  SnackBar(content: Text('Suara pad ${targetPad + 1} diganti')),
+                  SnackBar(
+                    content: Text('Suara pad ${targetPad + 1} diperbarui'),
+                  ),
                 );
               },
-              child: const Text('GUNAKAN SUARA'),
+              child: const Text('Gunakan suara'),
             ),
           ],
         ),
@@ -317,68 +415,80 @@ class _DrumPadPageState extends State<DrumPadPage> {
   }
 
   Future<void> _pickCustomSound(int targetPad) async {
-    final files = await FilePicker.pickFiles(type: FileType.audio);
-    final file = files.isEmpty ? null : files.single;
-    if (!mounted || file?.path == null) return;
-    setState(
-      () => _customSamples[targetPad] = SampleRef(
-        name: file!.name,
-        assetPath: file.path!,
-      ),
-    );
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Sample diimpor ke pad ${targetPad + 1}')),
-    );
+    try {
+      final files = await FilePicker.pickFiles(type: FileType.audio);
+      final file = files.isEmpty ? null : files.single;
+      if (!mounted || file?.path == null) return;
+      setState(
+        () => _customSamples[targetPad] = SampleRef(
+          name: file!.name,
+          assetPath: file.path!,
+        ),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Suara diimpor ke pad ${targetPad + 1}')),
+      );
+    } catch (_) {
+      _showError('Suara tidak dapat diimpor. Coba lagi.');
+    }
   }
 
   Future<void> _savePresetFile() async {
-    final pads = <int, List<int>>{};
-    for (var index = 0; index < _samples.length; index++) {
-      pads[index + 1] = await _sampleBytes(_samples[index]);
-    }
-    final uri = await FilePicker.saveFile(
-      fileName: 'MGR_Set${widget.state.activePresetIndex + 1}.dsx',
-      bytes: Uint8List.fromList(
-        _presetArchive.encode(widget.state.activePresetIndex + 1, pads),
-      ),
-      type: FileType.custom,
-      allowedExtensions: ['dsx'],
-    );
-    if (mounted && uri != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Preset berhasil disimpan')));
+    try {
+      final pads = <int, List<int>>{};
+      for (var index = 0; index < _samples.length; index++) {
+        pads[index + 1] = await _sampleBytes(_samples[index]);
+      }
+      final uri = await FilePicker.saveFile(
+        fileName: 'MGR_Set${widget.state.activePresetIndex + 1}.dsx',
+        bytes: Uint8List.fromList(
+          _presetArchive.encode(widget.state.activePresetIndex + 1, pads),
+        ),
+        type: FileType.custom,
+        allowedExtensions: ['dsx'],
+      );
+      if (mounted && uri != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Set suara disimpan')));
+      }
+    } catch (_) {
+      _showError('Set suara tidak dapat disimpan. Coba lagi.');
     }
   }
 
   Future<void> _loadPresetFile() async {
-    final files = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['dsx', 'zip'],
-    );
-    final path = files.isEmpty ? null : files.single.path;
-    if (!mounted || path == null) return;
-    final pads = await _presetArchive.read(File(path));
-    final directory = await getApplicationDocumentsDirectory();
-    final customDirectory = Directory(
-      '${directory.path}${Platform.pathSeparator}audio_kustom',
-    );
-    await customDirectory.create(recursive: true);
-    for (final entry in pads.entries) {
-      final output = File(
-        '${customDirectory.path}${Platform.pathSeparator}set${widget.state.activePresetIndex + 1}_pad_${entry.key + 1}.dat',
+    try {
+      final files = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['dsx', 'zip'],
       );
-      await output.writeAsBytes(entry.value, flush: true);
-      _customSamples[entry.key] = SampleRef(
-        name: 'CUSTOM ${entry.key + 1}',
-        assetPath: output.path,
+      final path = files.isEmpty ? null : files.single.path;
+      if (!mounted || path == null) return;
+      final pads = await _presetArchive.read(File(path));
+      final directory = await getApplicationDocumentsDirectory();
+      final customDirectory = Directory(
+        '${directory.path}${Platform.pathSeparator}audio_kustom',
       );
-    }
-    if (mounted) {
-      setState(() {});
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${pads.length} suara berhasil di-load')),
-      );
+      await customDirectory.create(recursive: true);
+      for (final entry in pads.entries) {
+        final output = File(
+          '${customDirectory.path}${Platform.pathSeparator}set${widget.state.activePresetIndex + 1}_pad_${entry.key + 1}.dat',
+        );
+        await output.writeAsBytes(entry.value, flush: true);
+        _customSamples[entry.key] = SampleRef(
+          name: 'Kustom ${entry.key + 1}',
+          assetPath: output.path,
+        );
+      }
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${pads.length} suara dimuat')));
+      }
+    } catch (_) {
+      _showError('Set suara tidak dapat dimuat. Coba lagi.');
     }
   }
 
@@ -469,7 +579,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
             actions: [
               TextButton(
                 onPressed: () => setState(() => _error = null),
-                child: const Text('TUTUP'),
+                child: const Text('Tutup'),
               ),
             ],
           ),
@@ -576,7 +686,7 @@ class _MainMenuSidebar extends StatelessWidget {
                   ),
                   const Expanded(
                     child: Text(
-                      'MAIN MENU',
+                      'Menu utama',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
@@ -588,19 +698,20 @@ class _MainMenuSidebar extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 18),
-              _MenuAction(label: 'SETTING VOLUME PAD', onPressed: onVolume),
+              _MenuAction(label: 'Atur volume pad', onPressed: onVolume),
               _MenuAction(
-                label: 'MODE LEFT (KIDAL): ${state.leftHanded ? 'ON' : 'OFF'}',
+                label:
+                    'Tangan kiri: ${state.leftHanded ? 'Aktif' : 'Nonaktif'}',
                 onPressed: onToggleLeft,
               ),
-              _MenuAction(label: 'ADD MUSIC', onPressed: onAddMusic),
-              _MenuAction(label: 'STUDIO RECORD', onPressed: onStudioRecord),
-              _MenuAction(label: 'GANTI TEMA (SKIN)', onPressed: onSkin),
+              _MenuAction(label: 'Tambah musik', onPressed: onAddMusic),
+              _MenuAction(label: 'Studio rekaman', onPressed: onStudioRecord),
+              _MenuAction(label: 'Ganti tema', onPressed: onSkin),
               if (musicName != null)
-                Text('Music: $musicName', style: const TextStyle(fontSize: 12)),
+                Text('Musik: $musicName', style: const TextStyle(fontSize: 12)),
               const SizedBox(height: 20),
               _MenuAction(
-                label: 'KEMBALI KE PAD',
+                label: 'Kembali ke pad',
                 color: Colors.purple,
                 onPressed: onClose,
               ),
@@ -684,7 +795,7 @@ class _InstrumentSidebar extends StatelessWidget {
               SampleCatalog.presets.length,
               (index) => _RailButton(
                 key: ValueKey('preset-$index'),
-                label: index == 5 ? 'DRUM' : 'SET ${index + 1}',
+                label: index == 5 ? 'Drum' : 'Set ${index + 1}',
                 selected: state.activePresetIndex == index,
                 onPressed: () => onPresetSelected(index),
               ),
@@ -700,7 +811,7 @@ class _InstrumentSidebar extends StatelessWidget {
               key: const ValueKey('menu-main'),
               onPressed: onMainMenu,
               style: OutlinedButton.styleFrom(foregroundColor: _MGRColors.ink),
-              child: const FittedBox(child: Text('MENU UTAMA')),
+              child: const FittedBox(child: Text('Menu utama')),
             ),
           ),
         ],
@@ -731,7 +842,7 @@ class _ActionGrid extends StatelessWidget {
             height: setButtonHeight,
             child: _ActionButton(
               key: const ValueKey('action-edit'),
-              label: 'EDIT',
+              label: 'Ubah',
               color: Colors.lightBlue,
               onPressed: onEdit,
             ),
@@ -744,7 +855,7 @@ class _ActionGrid extends StatelessWidget {
                   height: setButtonHeight,
                   child: _ActionButton(
                     key: const ValueKey('action-save'),
-                    label: 'SAVE',
+                    label: 'Simpan',
                     color: _MGRColors.success,
                     onPressed: onSave,
                   ),
@@ -756,7 +867,7 @@ class _ActionGrid extends StatelessWidget {
                   height: setButtonHeight,
                   child: _ActionButton(
                     key: const ValueKey('action-load'),
-                    label: 'LOAD',
+                    label: 'Muat',
                     color: _MGRColors.surface3,
                     onPressed: onLoad,
                   ),

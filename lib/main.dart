@@ -64,7 +64,7 @@ class _DsxDrumKendangAppState extends State<DsxDrumKendangApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'MGR Drum Kendang',
+      title: 'MGR Kendang',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.blue,

@@ -56,7 +56,7 @@ MGR is a tactile digital kendang instrument: a dark, dimensional hardware surfac
 
 ### MainMenuSidebar
 
-- Structure: volume settings, left-handed mode, Add Music, Studio Record, built-in skin selection (Original, Karakter, Kayu, Metal, Grafiti), and return-to-pad action.
+- Structure: volume settings, left-handed mode, Add Music, Studio Record, built-in skin-pack selection (Original, Kayu, six HD themes, and six Flat themes), and return-to-pad action.
 
 ## 5. Interaction and Motion
 

@@ -77,7 +77,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('pad-0')));
     await tester.pumpAndSettle();
-    expect(find.text('Pilih suara dari project'), findsOneWidget);
+    expect(find.text('Pilih suara bawaan'), findsOneWidget);
     expect(find.text('IMPORT FILE'), findsNothing);
     expect(find.byKey(const ValueKey('preview-sound')), findsOneWidget);
   });
@@ -94,13 +94,13 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('menu-main')));
     await tester.pump();
-    expect(find.text('MAIN MENU'), findsOneWidget);
-    expect(find.text('ADD MUSIC'), findsOneWidget);
+    expect(find.text('Menu utama'), findsOneWidget);
+    expect(find.text('Tambah musik'), findsOneWidget);
     expect(find.byKey(const ValueKey('main-menu-back')), findsOneWidget);
     expect(find.byKey(const ValueKey('menu-main')), findsNothing);
   });
 
-  testWidgets('lists the built-in Pro skin themes', (tester) async {
+  testWidgets('lists the built-in skin pack themes', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: DrumPadPage(
@@ -112,13 +112,22 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('menu-main')));
     await tester.pump();
-    await tester.tap(find.text('GANTI TEMA (SKIN)'));
+    await tester.tap(find.text('Ganti tema'));
     await tester.pumpAndSettle();
 
-    expect(find.text('SKIN ORIGINAL'), findsOneWidget);
-    expect(find.text('SKIN KARAKTER'), findsOneWidget);
-    expect(find.text('SKIN KAYU'), findsOneWidget);
-    expect(find.text('SKIN METAL'), findsOneWidget);
-    expect(find.text('SKIN GRAFITI'), findsOneWidget);
+    expect(find.text('Asli'), findsOneWidget);
+    expect(find.text('Kayu'), findsOneWidget);
+    expect(find.text('Batik HD'), findsOneWidget);
+    expect(find.text('Batik Flat'), findsOneWidget);
+    expect(find.text('Carbon Orange HD'), findsOneWidget);
+    expect(find.text('Carbon Orange Flat'), findsOneWidget);
+    expect(find.text('Crimson Stage HD'), findsOneWidget);
+    expect(find.text('Crimson Stage Flat'), findsOneWidget);
+    expect(find.text('Emerald Islamic HD'), findsOneWidget);
+    expect(find.text('Emerald Islamic Flat'), findsOneWidget);
+    expect(find.text('Leather Vintage HD'), findsOneWidget);
+    expect(find.text('Leather Vintage Flat'), findsOneWidget);
+    expect(find.text('Neon Cyber HD'), findsOneWidget);
+    expect(find.text('Neon Cyber Flat'), findsOneWidget);
   });
 }
