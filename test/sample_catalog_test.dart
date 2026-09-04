@@ -8,4 +8,20 @@ void main() {
       expect(preset.samples, hasLength(12));
     }
   });
+
+  test('exposes 99+ authentic DSX sound collection', () {
+    expect(SampleCatalog.allBuiltinSounds.length, greaterThanOrEqualTo(99));
+    expect(
+      SampleCatalog.allBuiltinSounds.any((s) => s.name.contains('Tarik Cak')),
+      isTrue,
+    );
+    expect(
+      SampleCatalog.allBuiltinSounds.any((s) => s.name.contains('Jaranan')),
+      isTrue,
+    );
+    expect(
+      SampleCatalog.allBuiltinSounds.any((s) => s.name.contains('Langgam Jawa')),
+      isTrue,
+    );
+  });
 }

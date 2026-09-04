@@ -304,9 +304,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
 
   Future<void> _showSoundSourceDialog(int targetPad) async {
     var source = _customSamples[targetPad] ?? _preset.samples[targetPad];
-    final sources = [
-      for (final preset in SampleCatalog.presets) ...preset.samples,
-    ];
+    final sources = SampleCatalog.allBuiltinSounds;
     await showDialog<void>(
       context: context,
       builder: (context) => StatefulBuilder(
