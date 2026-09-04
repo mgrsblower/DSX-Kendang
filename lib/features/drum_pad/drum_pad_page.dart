@@ -135,15 +135,17 @@ class _DrumPadPageState extends State<DrumPadPage> {
     }
   }
 
-  Future<void> _play(int index) async {
+  void _play(int index) {
     final volume = widget.state.masterVolume * widget.state.padVolumes[index];
-    await _playSample(_samples[index], volume);
+    _playSample(_samples[index], volume);
   }
 
   Future<void> _playSample(SampleRef sample, double volume) async {
     try {
       await widget.engine.play(sample, volume);
-      if (mounted) setState(() => _error = null);
+      if (_error != null && mounted) {
+        setState(() => _error = null);
+      }
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'Suara tidak dapat diputar. Coba lagi.');
@@ -1674,31 +1676,31 @@ class _DrumPadButtonState extends State<DrumPadButton> {
     child: Listener(
       behavior: HitTestBehavior.opaque,
       onPointerDown: (_) {
-        setState(() => _pressed = true);
         widget.onPressed();
+        setState(() => _pressed = true);
       },
       onPointerUp: (_) => setState(() => _pressed = false),
       onPointerCancel: (_) => setState(() => _pressed = false),
       child: AnimatedScale(
         scale: _pressed ? .94 : 1,
-        duration: const Duration(milliseconds: 40),
+        duration: const Duration(milliseconds: 30),
         curve: Curves.easeOut,
-        child: ElevatedButton(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(
-            padding: EdgeInsets.zero,
-            backgroundColor: _MGRColors.surface3,
-            foregroundColor: _MGRColors.ink,
-            elevation: widget.isSelecting ? 8 : 5,
-            shadowColor: widget.isSelecting
-                ? Colors.amberAccent.withValues(alpha: 0.5)
-                : Colors.black,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(
-                color: widget.isSelecting ? Colors.amberAccent : _MGRColors.accent,
-                width: widget.isSelecting ? 2.0 : .7,
+        child: Container(
+          decoration: BoxDecoration(
+            color: _MGRColors.surface3,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: widget.isSelecting
+                    ? Colors.amberAccent.withValues(alpha: 0.5)
+                    : Colors.black.withValues(alpha: 0.6),
+                blurRadius: widget.isSelecting ? 8 : 5,
+                offset: const Offset(0, 2),
               ),
+            ],
+            border: Border.all(
+              color: widget.isSelecting ? Colors.amberAccent : _MGRColors.accent,
+              width: widget.isSelecting ? 2.0 : .7,
             ),
           ),
           child: ClipRRect(
@@ -1709,6 +1711,10 @@ class _DrumPadButtonState extends State<DrumPadButton> {
                 if (widget.assetPath != null)
                   Image.asset(widget.assetPath!, fit: BoxFit.cover),
                 Container(color: Color.fromRGBO(0, 0, 0, widget.overlayOpacity)),
+                if (_pressed)
+                  Container(
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
                 if (widget.isSelecting && widget.padNumber != null)
                   Positioned(
                     top: 4,

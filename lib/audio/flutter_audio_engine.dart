@@ -74,11 +74,19 @@ class FlutterAudioEngine implements AudioEngine {
     _ensureActive();
     final player = _getPlayer();
     final source = _resolveSource(sample);
-    await player.setVolume(volume.clamp(0.0, 1.0));
+    final clampedVolume = volume.clamp(0.0, 1.0);
     try {
-      await player.play(source, mode: PlayerMode.lowLatency);
+      await player.play(
+        source,
+        volume: clampedVolume,
+        mode: PlayerMode.lowLatency,
+      );
     } catch (_) {
-      await player.play(source, mode: PlayerMode.mediaPlayer);
+      await player.play(
+        source,
+        volume: clampedVolume,
+        mode: PlayerMode.mediaPlayer,
+      );
     }
   }
 
