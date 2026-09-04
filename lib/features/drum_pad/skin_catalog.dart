@@ -2,12 +2,14 @@ class SkinOption {
   final String id;
   final String label;
   final String padAsset;
+  final String? smallPadAsset;
   final String? panelAsset;
 
   const SkinOption({
     required this.id,
     required this.label,
     required this.padAsset,
+    this.smallPadAsset,
     this.panelAsset,
   });
 }
@@ -224,6 +226,34 @@ class SkinCatalog {
       padAsset: 'assets/ui/skins/pad_rimuru.webp',
       panelAsset: 'assets/ui/skins/panel_rimuru.webp',
     ),
+    SkinOption(
+      id: 'gold',
+      label: 'Gold',
+      padAsset: 'assets/ui/skins/pad_gold.webp',
+      smallPadAsset: 'assets/ui/skins/pad_kecil_gold.webp',
+      panelAsset: 'assets/ui/skins/panel_gold.webp',
+    ),
+    SkinOption(
+      id: 'green',
+      label: 'Green',
+      padAsset: 'assets/ui/skins/pad_green.webp',
+      smallPadAsset: 'assets/ui/skins/pad_kecil_green.webp',
+      panelAsset: 'assets/ui/skins/panel_green.webp',
+    ),
+    SkinOption(
+      id: 'orange',
+      label: 'Orange',
+      padAsset: 'assets/ui/skins/pad_orange.webp',
+      smallPadAsset: 'assets/ui/skins/pad_kecil_orange.webp',
+      panelAsset: 'assets/ui/skins/panel_orange.webp',
+    ),
+    SkinOption(
+      id: 'red',
+      label: 'Red',
+      padAsset: 'assets/ui/skins/pad_red.webp',
+      smallPadAsset: 'assets/ui/skins/pad_kecil_red.webp',
+      panelAsset: 'assets/ui/skins/panel_red.webp',
+    ),
   ];
 
   static const List<MapEntry<String, String?>> panels = [
@@ -261,6 +291,10 @@ class SkinCatalog {
     MapEntry('One Piece', 'assets/ui/skins/panel_one_piece.webp'),
     MapEntry('Captain Tsubasa', 'assets/ui/skins/panel_tsubasa.webp'),
     MapEntry('Rimuru Tempest', 'assets/ui/skins/panel_rimuru.webp'),
+    MapEntry('Gold', 'assets/ui/skins/panel_gold.webp'),
+    MapEntry('Green', 'assets/ui/skins/panel_green.webp'),
+    MapEntry('Orange', 'assets/ui/skins/panel_orange.webp'),
+    MapEntry('Red', 'assets/ui/skins/panel_red.webp'),
   ];
 
   static const List<MapEntry<String, String>> padOptions = [
@@ -298,7 +332,18 @@ class SkinCatalog {
     MapEntry('One Piece', 'assets/ui/skins/pad_one_piece.webp'),
     MapEntry('Captain Tsubasa', 'assets/ui/skins/pad_tsubasa.webp'),
     MapEntry('Rimuru Tempest', 'assets/ui/skins/pad_rimuru.webp'),
+    MapEntry('Gold', 'assets/ui/skins/pad_gold.webp'),
+    MapEntry('Gold (Kecil)', 'assets/ui/skins/pad_kecil_gold.webp'),
+    MapEntry('Green', 'assets/ui/skins/pad_green.webp'),
+    MapEntry('Green (Kecil)', 'assets/ui/skins/pad_kecil_green.webp'),
+    MapEntry('Orange', 'assets/ui/skins/pad_orange.webp'),
+    MapEntry('Orange (Kecil)', 'assets/ui/skins/pad_kecil_orange.webp'),
+    MapEntry('Red', 'assets/ui/skins/pad_red.webp'),
+    MapEntry('Red (Kecil)', 'assets/ui/skins/pad_kecil_red.webp'),
   ];
+
+  static bool isSmallPad(int index) =>
+      (index >= 0 && index <= 2) || (index >= 9 && index <= 11);
 
   static String? resolvePanel(String? customPanel, String globalPackId) {
     if (customPanel != null) return customPanel;
@@ -325,6 +370,9 @@ class SkinCatalog {
       if (pack.id == globalPackId) {
         if (pack.id == 'default' || pack.id == 'grafiti') {
           return 'assets/ui/pad${index + 1}.webp';
+        }
+        if (isSmallPad(index) && pack.smallPadAsset != null) {
+          return pack.smallPadAsset!;
         }
         return pack.padAsset;
       }

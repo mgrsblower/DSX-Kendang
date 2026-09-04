@@ -3,9 +3,29 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('SkinCatalog exposes all panels and pad options', () {
-    expect(SkinCatalog.panels.length, greaterThanOrEqualTo(34));
-    expect(SkinCatalog.padOptions.length, greaterThanOrEqualTo(34));
-    expect(SkinCatalog.packs.length, greaterThanOrEqualTo(34));
+    expect(SkinCatalog.panels.length, greaterThanOrEqualTo(38));
+    expect(SkinCatalog.padOptions.length, greaterThanOrEqualTo(42));
+    expect(SkinCatalog.packs.length, greaterThanOrEqualTo(38));
+  });
+
+  test('SkinCatalog resolves dual-size pad skins correctly for small and large pads', () {
+    // Pads 1, 2, 3 (indices 0, 1, 2) and 10, 11, 12 (indices 9, 10, 11) should use pad_kecil
+    expect(SkinCatalog.isSmallPad(0), isTrue);
+    expect(SkinCatalog.isSmallPad(1), isTrue);
+    expect(SkinCatalog.isSmallPad(2), isTrue);
+    expect(SkinCatalog.isSmallPad(3), isFalse);
+    expect(SkinCatalog.isSmallPad(8), isFalse);
+    expect(SkinCatalog.isSmallPad(9), isTrue);
+    expect(SkinCatalog.isSmallPad(11), isTrue);
+
+    // Gold theme resolution
+    expect(SkinCatalog.resolvePad(0, {}, 'gold'), 'assets/ui/skins/pad_kecil_gold.webp');
+    expect(SkinCatalog.resolvePad(2, {}, 'gold'), 'assets/ui/skins/pad_kecil_gold.webp');
+    expect(SkinCatalog.resolvePad(3, {}, 'gold'), 'assets/ui/skins/pad_gold.webp');
+    expect(SkinCatalog.resolvePad(8, {}, 'gold'), 'assets/ui/skins/pad_gold.webp');
+    expect(SkinCatalog.resolvePad(9, {}, 'gold'), 'assets/ui/skins/pad_kecil_gold.webp');
+    expect(SkinCatalog.resolvePad(11, {}, 'gold'), 'assets/ui/skins/pad_kecil_gold.webp');
+    expect(SkinCatalog.resolvePanel(null, 'gold'), 'assets/ui/skins/panel_gold.webp');
   });
 
   test('SkinCatalog resolves new 14 themes correctly', () {
