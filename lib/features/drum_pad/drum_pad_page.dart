@@ -1012,7 +1012,7 @@ class _DrumPadButtonState extends State<DrumPadButton> {
               children: [
                 if (widget.assetPath != null)
                   Image.asset(widget.assetPath!, fit: BoxFit.cover),
-                Container(color: Colors.black26),
+                Container(color: Colors.black12),
               ],
             ),
           ),
