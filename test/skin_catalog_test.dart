@@ -3,9 +3,20 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('SkinCatalog exposes all panels and pad options', () {
-    expect(SkinCatalog.panels.length, greaterThanOrEqualTo(14));
-    expect(SkinCatalog.padOptions.length, greaterThanOrEqualTo(14));
-    expect(SkinCatalog.packs.length, greaterThanOrEqualTo(14));
+    expect(SkinCatalog.panels.length, greaterThanOrEqualTo(30));
+    expect(SkinCatalog.padOptions.length, greaterThanOrEqualTo(30));
+    expect(SkinCatalog.packs.length, greaterThanOrEqualTo(30));
+  });
+
+  test('SkinCatalog resolves new 14 themes correctly', () {
+    expect(
+      SkinCatalog.resolvePanel(null, 'cyberpunk'),
+      'assets/ui/skins/panel_cyberpunk.webp',
+    );
+    expect(
+      SkinCatalog.resolvePad(0, {}, 'material_design'),
+      'assets/ui/skins/pad_material_design.webp',
+    );
   });
 
   test('SkinCatalog resolves default and custom pad assets properly', () {
