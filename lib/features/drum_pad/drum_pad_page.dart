@@ -576,7 +576,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
       children: [
         if (panelAsset != null)
           Opacity(
-            opacity: .18,
+            opacity: .5,
             child: Image.asset(panelAsset, fit: BoxFit.cover),
           ),
         Container(
