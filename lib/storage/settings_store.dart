@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../audio/sample_catalog.dart';
 import '../features/drum_pad/drum_pad_state.dart';
 
 class SavedSkinSettings {
@@ -146,5 +147,38 @@ class SettingsStore {
 
   Future<void> saveMusicVolume(double volume) async {
     await _preferences.setDouble('music_volume', volume);
+  }
+
+  Map<int, SampleRef> loadCustomSamples() {
+    final raw = _readString('custom_samples_json');
+    if (raw == null) return {};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        final result = <int, SampleRef>{};
+        for (final entry in decoded.entries) {
+          final key = int.tryParse(entry.key.toString());
+          final val = entry.value;
+          if (key != null && val is Map && val['name'] != null && val['assetPath'] != null) {
+            result[key] = SampleRef(
+              name: val['name'].toString(),
+              assetPath: val['assetPath'].toString(),
+            );
+          }
+        }
+        return result;
+      }
+    } catch (_) {}
+    return {};
+  }
+
+  Future<void> saveCustomSamples(Map<int, SampleRef> samples) async {
+    final map = samples.map(
+      (k, v) => MapEntry(k.toString(), {
+        'name': v.name,
+        'assetPath': v.assetPath,
+      }),
+    );
+    await _preferences.setString('custom_samples_json', jsonEncode(map));
   }
 }

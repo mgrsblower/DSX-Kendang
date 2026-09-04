@@ -74,6 +74,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
     }
     if (widget.settingsStore != null) {
       _musicVolume = widget.settingsStore!.loadMusicVolume();
+      _customSamples.addAll(widget.settingsStore!.loadCustomSamples());
     }
     _playerStateSubscription = _musicPlayer.onPlayerStateChanged.listen((state) {
       if (mounted) {
@@ -124,6 +125,13 @@ class _DrumPadPageState extends State<DrumPadPage> {
           padOpacity: _padOpacity,
         ),
       );
+    }
+  }
+
+  Future<void> _saveCustomSamples() async {
+    final store = widget.settingsStore;
+    if (store != null) {
+      await store.saveCustomSamples(_customSamples);
     }
   }
 
@@ -536,6 +544,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
                 style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
                 onPressed: () {
                   setState(() => _customSamples.remove(targetPad));
+                  _saveCustomSamples();
                   Navigator.pop(context);
                   ScaffoldMessenger.of(this.context).showSnackBar(
                     SnackBar(
@@ -548,6 +557,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
             FilledButton(
               onPressed: () {
                 setState(() => _customSamples[targetPad] = source);
+                _saveCustomSamples();
                 Navigator.pop(context);
                 ScaffoldMessenger.of(this.context).showSnackBar(
                   SnackBar(
@@ -661,6 +671,8 @@ class _DrumPadPageState extends State<DrumPadPage> {
 
       if (mounted && confirmed == true) {
         setState(() => _customSamples[targetPad] = sampleCandidate);
+        await _saveCustomSamples();
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Suara "${file.name}" berhasil dipasang pada Pad ${targetPad + 1}')),
         );
