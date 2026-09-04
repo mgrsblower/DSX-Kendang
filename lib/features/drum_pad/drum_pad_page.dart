@@ -9,96 +9,10 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../audio/audio_engine.dart';
 import '../../audio/sample_catalog.dart';
 import '../../storage/preset_archive.dart';
+import '../../storage/settings_store.dart';
 import 'drum_pad_state.dart';
-
-class _SkinOption {
-  const _SkinOption({
-    required this.id,
-    required this.label,
-    required this.padAsset,
-    required this.panelAsset,
-  });
-
-  final String id;
-  final String label;
-  final String padAsset;
-  final String panelAsset;
-}
-
-const _skinOptions = [
-  _SkinOption(
-    id: 'batik',
-    label: 'Batik HD',
-    padAsset: 'assets/ui/skins/pad_batik.webp',
-    panelAsset: 'assets/ui/skins/panel_batik.webp',
-  ),
-  _SkinOption(
-    id: 'batik-flat',
-    label: 'Batik Flat',
-    padAsset: 'assets/ui/skins/pad_batik_flat.webp',
-    panelAsset: 'assets/ui/skins/panel_batik_flat.webp',
-  ),
-  _SkinOption(
-    id: 'carbon-orange',
-    label: 'Carbon Orange HD',
-    padAsset: 'assets/ui/skins/pad_carbon_orange.webp',
-    panelAsset: 'assets/ui/skins/panel_carbon_orange.webp',
-  ),
-  _SkinOption(
-    id: 'carbon-orange-flat',
-    label: 'Carbon Orange Flat',
-    padAsset: 'assets/ui/skins/pad_carbon_orange_flat.webp',
-    panelAsset: 'assets/ui/skins/panel_carbon_orange_flat.webp',
-  ),
-  _SkinOption(
-    id: 'crimson-stage',
-    label: 'Crimson Stage HD',
-    padAsset: 'assets/ui/skins/pad_crimson_stage.webp',
-    panelAsset: 'assets/ui/skins/panel_crimson_stage.webp',
-  ),
-  _SkinOption(
-    id: 'crimson-stage-flat',
-    label: 'Crimson Stage Flat',
-    padAsset: 'assets/ui/skins/pad_crimson_stage_flat.webp',
-    panelAsset: 'assets/ui/skins/panel_crimson_stage_flat.webp',
-  ),
-  _SkinOption(
-    id: 'emerald-islamic',
-    label: 'Emerald Islamic HD',
-    padAsset: 'assets/ui/skins/pad_emerald_islamic.webp',
-    panelAsset: 'assets/ui/skins/panel_emerald_islamic.webp',
-  ),
-  _SkinOption(
-    id: 'emerald-islamic-flat',
-    label: 'Emerald Islamic Flat',
-    padAsset: 'assets/ui/skins/pad_emerald_islamic_flat.webp',
-    panelAsset: 'assets/ui/skins/panel_emerald_islamic_flat.webp',
-  ),
-  _SkinOption(
-    id: 'leather-vintage',
-    label: 'Leather Vintage HD',
-    padAsset: 'assets/ui/skins/pad_leather_vintage.webp',
-    panelAsset: 'assets/ui/skins/panel_leather_vintage.webp',
-  ),
-  _SkinOption(
-    id: 'leather-vintage-flat',
-    label: 'Leather Vintage Flat',
-    padAsset: 'assets/ui/skins/pad_leather_vintage_flat.webp',
-    panelAsset: 'assets/ui/skins/panel_leather_vintage_flat.webp',
-  ),
-  _SkinOption(
-    id: 'neon-cyber',
-    label: 'Neon Cyber HD',
-    padAsset: 'assets/ui/skins/pad_neon_cyber.webp',
-    panelAsset: 'assets/ui/skins/panel_neon_cyber.webp',
-  ),
-  _SkinOption(
-    id: 'neon-cyber-flat',
-    label: 'Neon Cyber Flat',
-    padAsset: 'assets/ui/skins/pad_neon_cyber_flat.webp',
-    panelAsset: 'assets/ui/skins/panel_neon_cyber_flat.webp',
-  ),
-];
+import 'skin_catalog.dart';
+import 'skin_picker_dialogs.dart';
 
 class DrumPadPage extends StatefulWidget {
   const DrumPadPage({
@@ -106,11 +20,15 @@ class DrumPadPage extends StatefulWidget {
     required this.state,
     required this.engine,
     this.onStateChanged,
+    this.settingsStore,
+    this.initialSkinSettings,
   });
 
   final DrumPadState state;
   final AudioEngine engine;
   final VoidCallback? onStateChanged;
+  final SettingsStore? settingsStore;
+  final SavedSkinSettings? initialSkinSettings;
 
   @override
   State<DrumPadPage> createState() => _DrumPadPageState();
@@ -120,11 +38,24 @@ class _DrumPadPageState extends State<DrumPadPage> {
   String? _error;
   bool _isSelectingBuiltinPad = false;
   bool _isSelectingImportPad = false;
+  bool _isCustomizingPadSkin = false;
   bool _mainMenuOpen = false;
-  String _padSkin = 'default';
+  String? _activePanelAsset;
+  String _activeGlobalPadSkin = 'default';
+  final Map<int, String> _customPadAssets = {};
   final AudioPlayer _musicPlayer = AudioPlayer();
   final Map<int, SampleRef> _customSamples = {};
   final PresetArchive _presetArchive = const PresetArchive();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialSkinSettings != null) {
+      _activePanelAsset = widget.initialSkinSettings!.activePanelAsset;
+      _activeGlobalPadSkin = widget.initialSkinSettings!.globalPadSkin;
+      _customPadAssets.addAll(widget.initialSkinSettings!.customPadAssets);
+    }
+  }
 
   Preset get _preset => SampleCatalog.presets[widget.state.activePresetIndex];
 
@@ -133,23 +64,22 @@ class _DrumPadPageState extends State<DrumPadPage> {
     (index) => _customSamples[index] ?? _preset.samples[index],
   );
 
-  String _padAsset(int index) {
-    if (_padSkin == 'kayu') return 'assets/ui/pad_kayu.webp';
-    for (final skin in _skinOptions) {
-      if (_padSkin == skin.id) return skin.padAsset;
-    }
-    return 'assets/ui/pad${index + 1}.webp';
-  }
+  String _padAsset(int index) =>
+      SkinCatalog.resolvePad(index, _customPadAssets, _activeGlobalPadSkin);
 
-  String? _panelAsset() {
-    switch (_padSkin) {
-      case 'kayu':
-        return 'assets/ui/panel_kayu.webp';
-      default:
-        for (final skin in _skinOptions) {
-          if (_padSkin == skin.id) return skin.panelAsset;
-        }
-        return null;
+  String? _panelAsset() =>
+      SkinCatalog.resolvePanel(_activePanelAsset, _activeGlobalPadSkin);
+
+  Future<void> _saveSkinSettings() async {
+    final store = widget.settingsStore;
+    if (store != null) {
+      await store.saveSkinSettings(
+        SavedSkinSettings(
+          activePanelAsset: _activePanelAsset,
+          globalPadSkin: _activeGlobalPadSkin,
+          customPadAssets: _customPadAssets,
+        ),
+      );
     }
   }
 
@@ -282,39 +212,56 @@ class _DrumPadPageState extends State<DrumPadPage> {
     }
   }
 
-  Future<void> _showSkinPicker() async {
-    final selected = await showDialog<String>(
+  Future<void> _showThemeAndBackground() async {
+    final result = await showDialog<ThemeAndBackgroundResult>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: _MGRColors.surface2,
-        title: const Text('Pilih tema'),
-        content: SizedBox(
-          width: 420,
-          height: 560,
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                ListTile(
-                  title: const Text('Asli'),
-                  onTap: () => Navigator.pop(context, 'default'),
-                ),
-                ListTile(
-                  title: const Text('Kayu'),
-                  onTap: () => Navigator.pop(context, 'kayu'),
-                ),
-                ..._skinOptions.map(
-                  (skin) => ListTile(
-                    title: Text(skin.label),
-                    onTap: () => Navigator.pop(context, skin.id),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+      builder: (context) => ThemeAndBackgroundDialog(
+        activePanel: _activePanelAsset,
+        activeGlobalPad: _activeGlobalPadSkin,
       ),
     );
-    if (mounted && selected != null) setState(() => _padSkin = selected);
+    if (mounted && result != null) {
+      setState(() {
+        _activePanelAsset = result.selectedPanel;
+        _activeGlobalPadSkin = result.selectedGlobalPad;
+        if (result.resetCustomPads) {
+          _customPadAssets.clear();
+        }
+      });
+      await _saveSkinSettings();
+    }
+  }
+
+  void _startPadSkinCustomization() {
+    if (mounted) {
+      setState(() {
+        _mainMenuOpen = false;
+        _isCustomizingPadSkin = true;
+      });
+    }
+  }
+
+  Future<void> _showPadSkinPicker(int targetPad) async {
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (context) => PadSkinPickerDialog(
+        targetPad: targetPad,
+        currentAsset: _customPadAssets[targetPad],
+      ),
+    );
+    if (mounted && selected != null) {
+      setState(() {
+        if (selected == 'RESET') {
+          _customPadAssets.remove(targetPad);
+        } else {
+          _customPadAssets[targetPad] = selected;
+        }
+      });
+      await _saveSkinSettings();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Tampilan pad ${targetPad + 1} diperbarui')),
+      );
+    }
   }
 
   Future<void> _showStudioRecord() async {
@@ -530,7 +477,8 @@ class _DrumPadPageState extends State<DrumPadPage> {
               },
               onAddMusic: _showAddMusic,
               onStudioRecord: _showStudioRecord,
-              onSkin: _showSkinPicker,
+              onSkin: _showThemeAndBackground,
+              onCustomPadSkin: _startPadSkinCustomization,
               onSave: _savePresetFile,
               onLoad: _loadPresetFile,
             );
@@ -572,6 +520,37 @@ class _DrumPadPageState extends State<DrumPadPage> {
     final indices = widget.state.orderedPadIndices();
     return Column(
       children: [
+        if (_isCustomizingPadSkin)
+          Container(
+            color: _MGRColors.accent,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            child: Row(
+              children: [
+                const Icon(Icons.touch_app, color: Colors.black, size: 20),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Ketuk pad yang ingin diubah gambarnya',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                    minimumSize: const Size(60, 32),
+                  ),
+                  onPressed: () => setState(() => _isCustomizingPadSkin = false),
+                  child: const Text('Selesai'),
+                ),
+              ],
+            ),
+          ),
         if (_error != null)
           MaterialBanner(
             backgroundColor: Colors.red.shade900,
@@ -601,7 +580,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
           ),
         Container(
           key: const ValueKey('pad-surface'),
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(8),
           child: Column(
             children: List.generate(4, (row) {
               return Expanded(
@@ -620,7 +599,9 @@ class _DrumPadPageState extends State<DrumPadPage> {
                           label: _samples[index].name,
                           assetPath: _padAsset(index),
                           onPressed: () {
-                            if (_isSelectingBuiltinPad) {
+                            if (_isCustomizingPadSkin) {
+                              _showPadSkinPicker(index);
+                            } else if (_isSelectingBuiltinPad) {
                               setState(() => _isSelectingBuiltinPad = false);
                               _showSoundSourceDialog(index);
                             } else if (_isSelectingImportPad) {
@@ -654,6 +635,7 @@ class _MainMenuSidebar extends StatelessWidget {
     required this.onAddMusic,
     required this.onStudioRecord,
     required this.onSkin,
+    required this.onCustomPadSkin,
   });
 
   final DrumPadState state;
@@ -664,6 +646,7 @@ class _MainMenuSidebar extends StatelessWidget {
   final VoidCallback onAddMusic;
   final VoidCallback onStudioRecord;
   final VoidCallback onSkin;
+  final VoidCallback onCustomPadSkin;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -706,7 +689,8 @@ class _MainMenuSidebar extends StatelessWidget {
               ),
               _MenuAction(label: 'Tambah musik', onPressed: onAddMusic),
               _MenuAction(label: 'Studio rekaman', onPressed: onStudioRecord),
-              _MenuAction(label: 'Ganti tema', onPressed: onSkin),
+              _MenuAction(label: 'Tema & Background', onPressed: onSkin),
+              _MenuAction(label: 'Kustom gambar pad', onPressed: onCustomPadSkin),
               if (musicName != null)
                 Text('Musik: $musicName', style: const TextStyle(fontSize: 12)),
               const SizedBox(height: 20),
@@ -736,6 +720,7 @@ class _InstrumentSidebar extends StatelessWidget {
     required this.onAddMusic,
     required this.onStudioRecord,
     required this.onSkin,
+    required this.onCustomPadSkin,
     required this.onSave,
     required this.onLoad,
   });
@@ -751,6 +736,7 @@ class _InstrumentSidebar extends StatelessWidget {
   final VoidCallback onAddMusic;
   final VoidCallback onStudioRecord;
   final VoidCallback onSkin;
+  final VoidCallback onCustomPadSkin;
   final VoidCallback onSave;
   final VoidCallback onLoad;
 
@@ -766,6 +752,7 @@ class _InstrumentSidebar extends StatelessWidget {
         onAddMusic: onAddMusic,
         onStudioRecord: onStudioRecord,
         onSkin: onSkin,
+        onCustomPadSkin: onCustomPadSkin,
       );
     }
     return Container(

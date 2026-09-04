@@ -100,7 +100,7 @@ void main() {
     expect(find.byKey(const ValueKey('menu-main')), findsNothing);
   });
 
-  testWidgets('lists the built-in skin pack themes', (tester) async {
+  testWidgets('opens Tema & Background dialog with panels and global styles', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: DrumPadPage(
@@ -112,22 +112,48 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('menu-main')));
     await tester.pump();
-    await tester.tap(find.text('Ganti tema'));
+    await tester.tap(find.text('Tema & Background'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Asli'), findsOneWidget);
-    expect(find.text('Kayu'), findsOneWidget);
-    expect(find.text('Batik HD'), findsOneWidget);
-    expect(find.text('Batik Flat'), findsOneWidget);
-    expect(find.text('Carbon Orange HD'), findsOneWidget);
-    expect(find.text('Carbon Orange Flat'), findsOneWidget);
-    expect(find.text('Crimson Stage HD'), findsOneWidget);
-    expect(find.text('Crimson Stage Flat'), findsOneWidget);
-    expect(find.text('Emerald Islamic HD'), findsOneWidget);
-    expect(find.text('Emerald Islamic Flat'), findsOneWidget);
-    expect(find.text('Leather Vintage HD'), findsOneWidget);
-    expect(find.text('Leather Vintage Flat'), findsOneWidget);
-    expect(find.text('Neon Cyber HD'), findsOneWidget);
-    expect(find.text('Neon Cyber Flat'), findsOneWidget);
+    expect(find.text('Pengaturan Tema & Latar'), findsOneWidget);
+    expect(find.text('Latar Belakang (Panel)'), findsOneWidget);
+    expect(find.text('Gaya Pad (Terapkan ke Semua)'), findsOneWidget);
+  });
+
+  testWidgets('activates tap-to-customize pad skin mode', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DrumPadPage(
+          state: DrumPadState(),
+          engine: RecordingAudioEngine(),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const ValueKey('menu-main')));
+    await tester.pump();
+    await tester.tap(find.text('Kustom gambar pad'));
+    await tester.pumpAndSettle();
+
+    // Banner is visible
+    expect(find.text('Ketuk pad yang ingin diubah gambarnya'), findsOneWidget);
+    expect(find.text('Selesai'), findsOneWidget);
+
+    // Tap pad-0 to customize
+    await tester.tap(find.byKey(const ValueKey('pad-0')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pilih Tampilan Pad 1'), findsOneWidget);
+    expect(find.byKey(const ValueKey('pad-thumb-Kayu')), findsOneWidget);
+
+    // Select Kayu
+    await tester.tap(find.byKey(const ValueKey('pad-thumb-Kayu')));
+    await tester.pumpAndSettle();
+
+    // Finish customization
+    await tester.tap(find.text('Selesai'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ketuk pad yang ingin diubah gambarnya'), findsNothing);
   });
 }

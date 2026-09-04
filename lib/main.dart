@@ -27,6 +27,7 @@ class _DsxDrumKendangAppState extends State<DsxDrumKendangApp> {
   final _state = DrumPadState();
   final _engine = FlutterAudioEngine();
   SettingsStore? _settingsStore;
+  SavedSkinSettings? _skinSettings;
 
   @override
   void initState() {
@@ -38,6 +39,7 @@ class _DsxDrumKendangAppState extends State<DsxDrumKendangApp> {
     final preferences = await SharedPreferences.getInstance();
     final store = SettingsStore(preferences);
     final saved = await store.load();
+    final skin = await store.loadSkinSettings();
     _state.selectPreset(saved.activePresetIndex);
     _state.setMasterVolume(saved.masterVolume);
     for (var index = 0; index < DrumPadState.padCount; index++) {
@@ -45,7 +47,10 @@ class _DsxDrumKendangAppState extends State<DsxDrumKendangApp> {
     }
     _state.leftHanded = saved.leftHanded;
     if (mounted) {
-      setState(() => _settingsStore = store);
+      setState(() {
+        _settingsStore = store;
+        _skinSettings = skin;
+      });
     }
   }
 
@@ -76,6 +81,8 @@ class _DsxDrumKendangAppState extends State<DsxDrumKendangApp> {
         state: _state,
         engine: _engine,
         onStateChanged: _saveSettings,
+        settingsStore: _settingsStore,
+        initialSkinSettings: _skinSettings,
       ),
     );
   }
