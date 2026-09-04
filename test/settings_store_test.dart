@@ -51,6 +51,8 @@ void main() {
         0: 'assets/ui/pad_metal.webp',
         5: 'assets/ui/pad_karakter.webp',
       },
+      panelOpacity: 0.8,
+      padOpacity: 0.25,
     );
 
     await store.saveSkinSettings(skinSettings);
@@ -60,6 +62,8 @@ void main() {
     expect(loaded.globalPadSkin, 'batik_hd');
     expect(loaded.customPadAssets[0], 'assets/ui/pad_metal.webp');
     expect(loaded.customPadAssets[5], 'assets/ui/pad_karakter.webp');
+    expect(loaded.panelOpacity, closeTo(0.8, 0.001));
+    expect(loaded.padOpacity, closeTo(0.25, 0.001));
   });
 
   test('skin settings loads safe default when empty or corrupt', () async {

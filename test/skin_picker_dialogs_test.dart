@@ -104,6 +104,8 @@ void main() {
     expect(find.text('Pengaturan Tema & Latar'), findsOneWidget);
     expect(find.text('Latar Belakang (Panel)'), findsOneWidget);
     expect(find.text('Gaya Pad (Terapkan ke Semua)'), findsOneWidget);
+    expect(find.text('Opasitas Latar Belakang'), findsOneWidget);
+    expect(find.text('Lapisan Gelap Pad (Tint)'), findsOneWidget);
 
     // Tap on Kayu panel
     await tester.tap(find.byKey(const ValueKey('panel-thumb-Kayu')));
@@ -114,5 +116,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(result?.selectedPanel, 'assets/ui/panel_kayu.webp');
+    expect(result?.panelOpacity, 0.5);
+    expect(result?.padOpacity, 0.12);
   });
 }

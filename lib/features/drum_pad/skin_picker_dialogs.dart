@@ -6,11 +6,15 @@ class ThemeAndBackgroundResult {
   final String? selectedPanel;
   final String selectedGlobalPad;
   final bool resetCustomPads;
+  final double panelOpacity;
+  final double padOpacity;
 
   const ThemeAndBackgroundResult({
     required this.selectedPanel,
     required this.selectedGlobalPad,
     this.resetCustomPads = false,
+    this.panelOpacity = 0.5,
+    this.padOpacity = 0.12,
   });
 }
 
@@ -90,10 +94,14 @@ class ThemeAndBackgroundDialog extends StatefulWidget {
     super.key,
     required this.activePanel,
     required this.activeGlobalPad,
+    this.initialPanelOpacity = 0.5,
+    this.initialPadOpacity = 0.12,
   });
 
   final String? activePanel;
   final String activeGlobalPad;
+  final double initialPanelOpacity;
+  final double initialPadOpacity;
 
   @override
   State<ThemeAndBackgroundDialog> createState() => _ThemeAndBackgroundDialogState();
@@ -102,6 +110,8 @@ class ThemeAndBackgroundDialog extends StatefulWidget {
 class _ThemeAndBackgroundDialogState extends State<ThemeAndBackgroundDialog> {
   late String? _selectedPanel = widget.activePanel;
   late String _selectedGlobalPad = widget.activeGlobalPad;
+  late double _panelOpacity = widget.initialPanelOpacity;
+  late double _padOpacity = widget.initialPadOpacity;
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +120,7 @@ class _ThemeAndBackgroundDialogState extends State<ThemeAndBackgroundDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: Container(
         width: 580,
-        height: 520,
+        height: 580,
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -206,6 +216,68 @@ class _ThemeAndBackgroundDialogState extends State<ThemeAndBackgroundDialog> {
                         },
                       ),
                     ),
+                    const SizedBox(height: 18),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Opasitas Latar Belakang',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFF08A00),
+                          ),
+                        ),
+                        Text(
+                          '${(_panelOpacity * 100).round()}%',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFF4F4F0),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Slider(
+                      value: _panelOpacity,
+                      min: 0.0,
+                      max: 1.0,
+                      divisions: 20,
+                      activeColor: const Color(0xFFF08A00),
+                      inactiveColor: const Color(0xFF4A4A4A),
+                      onChanged: (val) => setState(() => _panelOpacity = val),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Lapisan Gelap Pad (Tint)',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFF08A00),
+                          ),
+                        ),
+                        Text(
+                          '${(_padOpacity * 100).round()}%',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFF4F4F0),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Slider(
+                      value: _padOpacity,
+                      min: 0.0,
+                      max: 0.5,
+                      divisions: 20,
+                      activeColor: const Color(0xFFF08A00),
+                      inactiveColor: const Color(0xFF4A4A4A),
+                      onChanged: (val) => setState(() => _padOpacity = val),
+                    ),
                   ],
                 ),
               ),
@@ -219,6 +291,8 @@ class _ThemeAndBackgroundDialogState extends State<ThemeAndBackgroundDialog> {
                     setState(() {
                       _selectedPanel = null;
                       _selectedGlobalPad = 'default';
+                      _panelOpacity = 0.5;
+                      _padOpacity = 0.12;
                     });
                   },
                   child: const Text('Reset ke Asli'),
@@ -236,6 +310,8 @@ class _ThemeAndBackgroundDialogState extends State<ThemeAndBackgroundDialog> {
                         selectedPanel: _selectedPanel,
                         selectedGlobalPad: _selectedGlobalPad,
                         resetCustomPads: true,
+                        panelOpacity: _panelOpacity,
+                        padOpacity: _padOpacity,
                       ),
                     );
                   },

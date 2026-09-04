@@ -43,6 +43,8 @@ class _DrumPadPageState extends State<DrumPadPage> {
   String? _activePanelAsset;
   String _activeGlobalPadSkin = 'default';
   final Map<int, String> _customPadAssets = {};
+  double _panelOpacity = 0.5;
+  double _padOpacity = 0.12;
   final AudioPlayer _musicPlayer = AudioPlayer();
   final Map<int, SampleRef> _customSamples = {};
   final PresetArchive _presetArchive = const PresetArchive();
@@ -54,6 +56,8 @@ class _DrumPadPageState extends State<DrumPadPage> {
       _activePanelAsset = widget.initialSkinSettings!.activePanelAsset;
       _activeGlobalPadSkin = widget.initialSkinSettings!.globalPadSkin;
       _customPadAssets.addAll(widget.initialSkinSettings!.customPadAssets);
+      _panelOpacity = widget.initialSkinSettings!.panelOpacity;
+      _padOpacity = widget.initialSkinSettings!.padOpacity;
     }
   }
 
@@ -78,6 +82,8 @@ class _DrumPadPageState extends State<DrumPadPage> {
           activePanelAsset: _activePanelAsset,
           globalPadSkin: _activeGlobalPadSkin,
           customPadAssets: _customPadAssets,
+          panelOpacity: _panelOpacity,
+          padOpacity: _padOpacity,
         ),
       );
     }
@@ -218,12 +224,16 @@ class _DrumPadPageState extends State<DrumPadPage> {
       builder: (context) => ThemeAndBackgroundDialog(
         activePanel: _activePanelAsset,
         activeGlobalPad: _activeGlobalPadSkin,
+        initialPanelOpacity: _panelOpacity,
+        initialPadOpacity: _padOpacity,
       ),
     );
     if (mounted && result != null) {
       setState(() {
         _activePanelAsset = result.selectedPanel;
         _activeGlobalPadSkin = result.selectedGlobalPad;
+        _panelOpacity = result.panelOpacity;
+        _padOpacity = result.padOpacity;
         if (result.resetCustomPads) {
           _customPadAssets.clear();
         }
@@ -576,7 +586,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
       children: [
         if (panelAsset != null)
           Opacity(
-            opacity: .5,
+            opacity: _panelOpacity,
             child: Image.asset(panelAsset, fit: BoxFit.cover),
           ),
         Container(
@@ -599,6 +609,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
                           key: ValueKey('pad-$index'),
                           label: _samples[index].name,
                           assetPath: _padAsset(index),
+                          overlayOpacity: _padOpacity,
                           onPressed: () {
                             if (_isCustomizingPadSkin) {
                               _showPadSkinPicker(index);
@@ -967,11 +978,13 @@ class DrumPadButton extends StatefulWidget {
     required this.label,
     required this.onPressed,
     this.assetPath,
+    this.overlayOpacity = 0.12,
   });
 
   final String label;
   final VoidCallback onPressed;
   final String? assetPath;
+  final double overlayOpacity;
 
   @override
   State<DrumPadButton> createState() => _DrumPadButtonState();
@@ -1012,7 +1025,7 @@ class _DrumPadButtonState extends State<DrumPadButton> {
               children: [
                 if (widget.assetPath != null)
                   Image.asset(widget.assetPath!, fit: BoxFit.cover),
-                Container(color: Colors.black12),
+                Container(color: Color.fromRGBO(0, 0, 0, widget.overlayOpacity)),
               ],
             ),
           ),

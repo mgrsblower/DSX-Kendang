@@ -8,11 +8,15 @@ class SavedSkinSettings {
   final String? activePanelAsset;
   final String globalPadSkin;
   final Map<int, String> customPadAssets;
+  final double panelOpacity;
+  final double padOpacity;
 
   const SavedSkinSettings({
     this.activePanelAsset,
     required this.globalPadSkin,
     required this.customPadAssets,
+    this.panelOpacity = 0.5,
+    this.padOpacity = 0.12,
   });
 }
 
@@ -93,6 +97,9 @@ class SettingsStore {
       settings.globalPadSkin,
     );
 
+    await _preferences.setDouble('panel_opacity', settings.panelOpacity);
+    await _preferences.setDouble('pad_opacity', settings.padOpacity);
+
     final map = settings.customPadAssets.map(
       (k, v) => MapEntry(k.toString(), v),
     );
@@ -103,6 +110,8 @@ class SettingsStore {
     final panel = _readString('active_panel_asset');
     final globalPad = _readString('global_pad_skin') ?? 'default';
     final customRaw = _readString('custom_pad_assets');
+    final panelOpacity = _readDouble('panel_opacity') ?? 0.5;
+    final padOpacity = _readDouble('pad_opacity') ?? 0.12;
 
     final customPads = <int, String>{};
     if (customRaw != null) {
@@ -126,6 +135,8 @@ class SettingsStore {
       activePanelAsset: panel,
       globalPadSkin: globalPad,
       customPadAssets: customPads,
+      panelOpacity: panelOpacity,
+      padOpacity: padOpacity,
     );
   }
 }
