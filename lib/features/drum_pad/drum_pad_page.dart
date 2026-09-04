@@ -721,8 +721,9 @@ class _DrumPadPageState extends State<DrumPadPage> {
       );
       await customDirectory.create(recursive: true);
       for (final entry in pads.entries) {
+        final ext = PresetArchive.detectAudioExtension(entry.value);
         final output = File(
-          '${customDirectory.path}${Platform.pathSeparator}set${widget.state.activePresetIndex + 1}_pad_${entry.key + 1}.dat',
+          '${customDirectory.path}${Platform.pathSeparator}set${widget.state.activePresetIndex + 1}_pad_${entry.key + 1}.$ext',
         );
         await output.writeAsBytes(entry.value, flush: true);
         _customSamples[entry.key] = SampleRef(
@@ -730,6 +731,8 @@ class _DrumPadPageState extends State<DrumPadPage> {
           assetPath: output.path,
         );
       }
+      await _saveCustomSamples();
+      widget.engine.preload(_preset);
       if (mounted) {
         setState(() {});
         ScaffoldMessenger.of(
