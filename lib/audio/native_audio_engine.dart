@@ -23,9 +23,10 @@ class NativeAudioEngine implements AudioEngine {
   @override
   Future<void> preload(Preset preset) async {
     _ensureActive();
-    await _fallback.preload(preset);
-
-    if (!_isAndroid) return;
+    if (!_isAndroid) {
+      await _fallback.preload(preset);
+      return;
+    }
 
     final paths = preset.samples.map((s) => s.assetPath).toList();
     try {

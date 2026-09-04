@@ -1,8 +1,10 @@
 import 'package:dsx_drum_kendang/audio/audio_engine.dart';
 import 'package:dsx_drum_kendang/features/drum_pad/drum_pad_page.dart';
 import 'package:dsx_drum_kendang/features/drum_pad/drum_pad_state.dart';
+import 'package:dsx_drum_kendang/storage/settings_store.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   testWidgets('renders twelve pads and plays the tapped sample', (
@@ -36,6 +38,28 @@ void main() {
 
     expect(state.activePresetIndex, 5);
     expect(find.byKey(const ValueKey('pad-11')), findsOneWidget);
+  });
+
+  testWidgets('preloads the current custom sample source', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'custom_samples_json':
+          '{"0":{"name":"Custom","assetPath":"/tmp/custom.wav"}}',
+    });
+    final preferences = await SharedPreferences.getInstance();
+    final engine = RecordingAudioEngine();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DrumPadPage(
+          state: DrumPadState(),
+          engine: engine,
+          settingsStore: SettingsStore(preferences),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(engine.preloadedPreset?.samples.first.assetPath, '/tmp/custom.wav');
   });
 
   testWidgets('renders the MGR instrument rail and live pad surface', (

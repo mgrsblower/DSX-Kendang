@@ -40,7 +40,7 @@ void main() {
       final preset = SampleCatalog.presets.first;
       await engine.preload(preset);
 
-      expect(mockFallback.preloadedPreset, preset);
+      expect(mockFallback.preloadedPreset, isNull);
       expect(calls.length, 1);
       expect(calls.first.method, 'preload');
       final preloadedPaths = (calls.first.arguments as Map)['paths'] as List;

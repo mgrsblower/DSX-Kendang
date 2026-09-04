@@ -97,7 +97,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
         });
       }
     });
-    widget.engine.preload(_preset);
+    widget.engine.preload(Preset(name: _preset.name, samples: _samples));
   }
 
   Preset get _preset => SampleCatalog.presets[widget.state.activePresetIndex];
@@ -156,7 +156,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
   void _selectPreset(int index) {
     setState(() => widget.state.selectPreset(index));
     widget.onStateChanged?.call();
-    widget.engine.preload(_preset);
+    widget.engine.preload(Preset(name: _preset.name, samples: _samples));
   }
 
   void _showError(String message) {

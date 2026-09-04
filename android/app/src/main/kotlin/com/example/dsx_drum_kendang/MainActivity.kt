@@ -15,6 +15,13 @@ class MainActivity : FlutterActivity() {
     private var soundPool: SoundPool? = null
     private val pathToSoundId = HashMap<String, Int>()
     private val loadedSoundIds = HashSet<Int>()
+    private val pendingPreloads = ArrayList<PendingPreload>()
+
+    private data class PendingPreload(
+        val soundIds: MutableSet<Int>,
+        val result: MethodChannel.Result,
+        var failed: Boolean = false,
+    )
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -25,18 +32,17 @@ class MainActivity : FlutterActivity() {
                 "preload" -> {
                     val paths = call.argument<List<String>>("paths")
                     if (paths != null) {
-                        for (path in paths) {
-                            loadSound(path)
-                        }
+                        preloadSounds(paths, result)
+                    } else {
+                        result.error("INVALID_ARGS", "Paths are required", null)
                     }
-                    result.success(true)
                 }
                 "play" -> {
                     val path = call.argument<String>("path")
                     val volume = (call.argument<Double>("volume") ?: 1.0).toFloat().coerceIn(0.0f, 1.0f)
                     if (path != null) {
-                        val soundId = pathToSoundId[path] ?: loadSound(path)
-                        if (soundId != null && soundId > 0) {
+                        val soundId = pathToSoundId[path]
+                        if (soundId != null && loadedSoundIds.contains(soundId)) {
                             soundPool?.play(soundId, volume, volume, 1, 0, 1.0f)
                             result.success(true)
                         } else {
@@ -70,6 +76,36 @@ class MainActivity : FlutterActivity() {
             if (status == 0) {
                 loadedSoundIds.add(sampleId)
             }
+            val iterator = pendingPreloads.iterator()
+            while (iterator.hasNext()) {
+                val pending = iterator.next()
+                if (status != 0) {
+                    pending.failed = true
+                }
+                pending.soundIds.remove(sampleId)
+                if (pending.soundIds.isEmpty()) {
+                    pending.result.success(!pending.failed)
+                    iterator.remove()
+                }
+            }
+        }
+    }
+
+    private fun preloadSounds(paths: List<String>, result: MethodChannel.Result) {
+        val pendingIds = HashSet<Int>()
+        var failed = false
+        for (path in paths.toSet()) {
+            val soundId = pathToSoundId[path] ?: loadSound(path)
+            if (soundId == null || soundId <= 0) {
+                failed = true
+            } else if (!loadedSoundIds.contains(soundId)) {
+                pendingIds.add(soundId)
+            }
+        }
+        if (pendingIds.isEmpty()) {
+            result.success(!failed)
+        } else {
+            pendingPreloads.add(PendingPreload(pendingIds, result, failed))
         }
     }
 
@@ -112,6 +148,7 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun releaseSoundPool() {
+        pendingPreloads.clear()
         soundPool?.release()
         soundPool = null
         pathToSoundId.clear()
