@@ -258,6 +258,7 @@ class _DrumPadPageState extends State<DrumPadPage> {
         }
       });
       await _saveSkinSettings();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Tampilan pad ${targetPad + 1} diperbarui')),
       );
