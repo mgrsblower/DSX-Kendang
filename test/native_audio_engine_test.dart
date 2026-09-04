@@ -60,6 +60,27 @@ void main() {
       expect(calls.last.method, 'release');
     });
 
+    test('preloads and plays via native channel when on iOS', () async {
+      final mockFallback = RecordingAudioEngine();
+      final engine = NativeAudioEngine(
+        channel: channel,
+        fallbackEngine: mockFallback,
+        isAndroidOverride: false,
+        isIosOverride: true,
+      );
+
+      final preset = SampleCatalog.presets.first;
+      await engine.preload(preset);
+      await engine.play(preset.samples.first, 0.65);
+
+      expect(calls.map((call) => call.method), ['preload', 'play']);
+      expect(mockFallback.preloadedPreset, isNull);
+      expect(mockFallback.playedVolumes, isEmpty);
+
+      await engine.dispose();
+      expect(calls.last.method, 'release');
+    });
+
     test('falls back to fallbackEngine when native play returns false', () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (MethodCall methodCall) async {

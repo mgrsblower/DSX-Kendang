@@ -11,19 +11,24 @@ class NativeAudioEngine implements AudioEngine {
     MethodChannel? channel,
     AudioEngine? fallbackEngine,
     bool? isAndroidOverride,
+    bool? isIosOverride,
   })  : _channel = channel ?? const MethodChannel('com.mgr.dsx_drum_kendang/audio'),
         _fallback = fallbackEngine ?? FlutterAudioEngine(),
-        _isAndroid = isAndroidOverride ?? (!kIsWeb && Platform.isAndroid);
+        _isAndroid = isAndroidOverride ?? (!kIsWeb && Platform.isAndroid),
+        _isIos = isIosOverride ?? (!kIsWeb && Platform.isIOS);
 
   final MethodChannel _channel;
   final AudioEngine _fallback;
   final bool _isAndroid;
+  final bool _isIos;
   bool _disposed = false;
+
+  bool get _isNativePlatform => _isAndroid || _isIos;
 
   @override
   Future<void> preload(Preset preset) async {
     _ensureActive();
-    if (!_isAndroid) {
+    if (!_isNativePlatform) {
       await _fallback.preload(preset);
       return;
     }
@@ -39,7 +44,7 @@ class NativeAudioEngine implements AudioEngine {
   @override
   Future<void> play(SampleRef sample, double volume) async {
     _ensureActive();
-    if (!_isAndroid) {
+    if (!_isNativePlatform) {
       return _fallback.play(sample, volume);
     }
 
@@ -59,7 +64,7 @@ class NativeAudioEngine implements AudioEngine {
   @override
   Future<void> dispose() async {
     _disposed = true;
-    if (_isAndroid) {
+    if (_isNativePlatform) {
       try {
         await _channel.invokeMethod('release');
       } catch (_) {}
